@@ -67,7 +67,11 @@ function OrderTrackingPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const response = await fetch(`/api/orders/${orderId}`);
+        const response = await fetch(`/api/orders/${orderId}`, {
+          headers: {
+            "x-tracking-code": orderId,
+          },
+        });
         const body = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(body?.error || "Não foi possível carregar o rastreio.");
         setOrder(body.order as OrderDetails);
@@ -83,7 +87,11 @@ function OrderTrackingPage() {
   useEffect(() => {
     const timer = window.setInterval(async () => {
       try {
-        const response = await fetch(`/api/orders/${orderId}`);
+        const response = await fetch(`/api/orders/${orderId}`, {
+          headers: {
+            "x-tracking-code": orderId,
+          },
+        });
         if (!response.ok) return;
         const body = await response.json();
         setOrder(body.order as OrderDetails);

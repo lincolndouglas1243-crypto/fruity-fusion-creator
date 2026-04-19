@@ -114,8 +114,8 @@ export function OrderTrackingSection() {
   }, [orderId]);
 
   return (
-    <SectionReveal className="brand-shell mt-20" id="acompanhar">
-      <div className="glass-card p-7">
+    <SectionReveal className="brand-shell mt-20">
+      <div id="acompanhar" className="glass-card p-7">
         <h2 className="text-3xl font-extrabold text-foreground">Acompanhe seu pedido em tempo real</h2>
         <p className="mt-2 text-muted-foreground">Veja status ao vivo e a rota do motoboy quando estiver a caminho.</p>
 

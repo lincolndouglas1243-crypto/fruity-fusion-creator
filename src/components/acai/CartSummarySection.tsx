@@ -4,7 +4,7 @@ import { SectionReveal } from "./SectionReveal";
 import { formatCurrency, useCart } from "./cart-context";
 
 export function CartSummarySection() {
-  const { items, total, increaseQuantity, decreaseQuantity, removeItem, clearCart, submitOrder, isSubmitting, lastOrderId } =
+  const { items, total, increaseQuantity, decreaseQuantity, removeItem, clearCart, submitOrder, isSubmitting, lastOrderId, lastTrackingCode } =
     useCart();
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -34,8 +34,9 @@ export function CartSummarySection() {
   };
 
   const handleShareTracking = async () => {
-    if (!lastOrderId) return;
-    const trackingUrl = `${window.location.origin}/pedido/${lastOrderId}`;
+    const code = lastTrackingCode ?? lastOrderId;
+    if (!code) return;
+    const trackingUrl = `${window.location.origin}/pedido/${code}`;
     try {
       await navigator.clipboard.writeText(trackingUrl);
       setFeedback("Link de rastreio copiado! Envie ao cliente no WhatsApp.");
@@ -148,11 +149,14 @@ export function CartSummarySection() {
           {(feedback || lastOrderId) && (
             <div className="mt-3 space-y-2 text-sm font-medium text-foreground">
               <p>{feedback ?? `Último pedido: #${lastOrderId?.slice(0, 8)}`}</p>
-              {lastOrderId && (
+              {(lastTrackingCode || lastOrderId) && (
                 <div className="flex flex-wrap items-center gap-3">
-                  <a href={`/pedido/${lastOrderId}`} className="story-link text-primary">
+                  <a href={`/pedido/${lastTrackingCode ?? lastOrderId}`} className="story-link text-primary">
                     Abrir link de rastreio premium
                   </a>
+                  <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+                    Código: {lastTrackingCode ?? "---"}
+                  </span>
                   <button type="button" onClick={handleShareTracking} className="btn-soft px-3 py-2 text-xs">
                     Compartilhar rastreio
                   </button>

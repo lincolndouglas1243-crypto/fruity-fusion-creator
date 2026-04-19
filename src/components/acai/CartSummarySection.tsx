@@ -10,7 +10,7 @@ export function CartSummarySection() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [notes, setNotes] = useState("");
-  const [deliveryFee, setDeliveryFee] = useState(6);
+  const [deliveryFee, setDeliveryFee] = useState(0);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const handleSubmitOrder = async () => {
@@ -135,7 +135,14 @@ export function CartSummarySection() {
           </motion.button>
 
           {(feedback || lastOrderId) && (
-            <p className="mt-3 text-sm font-medium text-foreground">{feedback ?? `Último pedido: #${lastOrderId?.slice(0, 8)}`}</p>
+            <div className="mt-3 space-y-2 text-sm font-medium text-foreground">
+              <p>{feedback ?? `Último pedido: #${lastOrderId?.slice(0, 8)}`}</p>
+              {lastOrderId && (
+                <a href={`/pedido/${lastOrderId}`} className="story-link text-primary">
+                  Abrir link de rastreio premium
+                </a>
+              )}
+            </div>
           )}
         </div>
       </div>

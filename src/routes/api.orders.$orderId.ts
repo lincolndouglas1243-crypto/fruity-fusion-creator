@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { Database } from "@/integrations/supabase/types";
 import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 function getServerClient(token: string) {
   const url = import.meta.env.VITE_SUPABASE_URL;
@@ -27,28 +28,33 @@ export const Route = createFileRoute("/api/orders/$orderId")({
     handlers: {
       GET: async ({ request, params }) => {
         const token = getBearerToken(request);
-        if (!token) return Response.json({ error: "Não autorizado" }, { status: 401 });
-
-        const supabase = getServerClient(token);
-        const { data: userData } = await supabase.auth.getUser(token);
-        if (!userData.user) return Response.json({ error: "Sessão inválida" }, { status: 401 });
-
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", userData.user.id)
-          .eq("role", "admin")
+        const { data: order } = await supabaseAdmin
+          .from("orders")
+          .select("id, user_id, status, total, created_at, courier_lat, courier_lng, courier_updated_at, estimated_minutes")
+          .eq("id", params.orderId)
           .maybeSingle();
-
-        const { data: order } = await supabase.from("orders").select("*").eq("id", params.orderId).maybeSingle();
         if (!order) return Response.json({ error: "Pedido não encontrado" }, { status: 404 });
 
-        const isAdmin = Boolean(roleData?.role === "admin");
-        if (!isAdmin && order.user_id !== userData.user.id) {
-          return Response.json({ error: "Sem permissão" }, { status: 403 });
+        if (token) {
+          const supabase = getServerClient(token);
+          const { data: userData } = await supabase.auth.getUser(token);
+
+          if (userData.user) {
+            const { data: roleData } = await supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", userData.user.id)
+              .eq("role", "admin")
+              .maybeSingle();
+
+            const isAdmin = Boolean(roleData?.role === "admin");
+            if (!isAdmin && order.user_id !== userData.user.id) {
+              return Response.json({ error: "Sem permissão" }, { status: 403 });
+            }
+          }
         }
 
-        const { data: items } = await supabase
+        const { data: items } = await supabaseAdmin
           .from("order_items")
           .select("id, product_name, quantity, selected_size, selected_toppings, line_total")
           .eq("order_id", order.id)

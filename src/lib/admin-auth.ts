@@ -2,8 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 function getAdminClient() {
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const url = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
   if (!url || !key) {
     throw new Error("Server configuration error: admin client is not configured");
@@ -27,18 +27,18 @@ export async function requireAdmin(request: Request) {
   const supabaseAdmin = getAdminClient();
   supabaseAdmin.auth.setSession({ access_token: token, refresh_token: "" });
 
-  const authedClient = createClient<Database>(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+  const url = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return { error: "Configuração do servidor ausente", status: 500 } as const;
+
+  const authedClient = createClient<Database>(url, key, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
-      auth: { persistSession: false, autoRefreshToken: false },
     },
-  );
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 
   const { data: userData } = await supabaseAdmin.auth.getUser(token);
   const userId = userData.user?.id;

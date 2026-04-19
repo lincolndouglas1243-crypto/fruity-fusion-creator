@@ -1,9 +1,9 @@
 import { animate, motion, useInView, useMotionValue, useTransform } from "framer-motion";
 import { useEffect, useRef } from "react";
 
-function Counter({ value, suffix = "" }: { value: number; suffix?: string }) {
+function Counter({ value, suffix = "", decimals = 0 }: { value: number; suffix?: string; decimals?: number }) {
   const count = useMotionValue(0);
-  const rounded = useTransform(count, (latest) => Math.round(latest));
+  const rounded = useTransform(count, (latest) => latest.toFixed(decimals));
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -30,7 +30,7 @@ export function StatsStrip() {
           <p className="text-sm text-muted-foreground">Pedidos entregues</p>
         </div>
         <div>
-          <Counter value={4.9} suffix="★" />
+          <Counter value={4.9} suffix="★" decimals={1} />
           <p className="text-sm text-muted-foreground">Média de avaliação</p>
         </div>
         <div>

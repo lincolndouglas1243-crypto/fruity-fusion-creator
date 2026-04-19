@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { authFetch } from "@/lib/api-client";
 
@@ -63,11 +63,28 @@ function AdminPage() {
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [promotions, setPromotions] = useState<PromotionRow[]>([]);
   const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [statusFilter, setStatusFilter] = useState<"all" | OrderRow["status"]>("all");
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [gpsOrderId, setGpsOrderId] = useState<string | null>(null);
+  const gpsWatchRef = useRef<number | null>(null);
 
-  const totals = useMemo(
-    () => ({ pending: orders.filter((item) => item.status === "pending").length, totalOrders: orders.length }),
-    [orders],
-  );
+  const filteredOrders = useMemo(() => {
+    return orders.filter((item) => {
+      const byStatus = statusFilter === "all" || item.status === statusFilter;
+      const byName = item.customer_name.toLowerCase().includes(customerSearch.toLowerCase());
+      return byStatus && byName;
+    });
+  }, [orders, statusFilter, customerSearch]);
+
+  const totals = useMemo(() => {
+    const revenue = orders.reduce((sum, item) => sum + Number(item.total || 0), 0);
+    return {
+      pending: orders.filter((item) => item.status === "pending").length,
+      onTheWay: orders.filter((item) => item.status === "on_the_way").length,
+      totalOrders: orders.length,
+      revenue,
+    };
+  }, [orders]);
 
   const loadDashboard = async () => {
     setLoading(true);
@@ -94,6 +111,73 @@ function AdminPage() {
     });
   }, []);
 
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const channel = supabase
+      .channel("admin-orders-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => loadDashboard())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAuthenticated]);
+
+  const stopGps = () => {
+    if (gpsWatchRef.current !== null) {
+      navigator.geolocation.clearWatch(gpsWatchRef.current);
+      gpsWatchRef.current = null;
+    }
+    setGpsOrderId(null);
+  };
+
+  const startGps = (order: OrderRow) => {
+    if (!navigator.geolocation) {
+      setMessage("GPS não disponível neste dispositivo.");
+      return;
+    }
+
+    stopGps();
+    setGpsOrderId(order.id);
+
+    const watchId = navigator.geolocation.watchPosition(
+      async (position) => {
+        const lat = Number(position.coords.latitude.toFixed(6));
+        const lng = Number(position.coords.longitude.toFixed(6));
+        const heading = position.coords.heading !== null ? Number(position.coords.heading.toFixed(2)) : null;
+
+        setOrders((current) =>
+          current.map((item) =>
+            item.id === order.id
+              ? {
+                  ...item,
+                  courier_lat: lat,
+                  courier_lng: lng,
+                  courier_heading: heading,
+                  courier_updated_at: new Date().toISOString(),
+                }
+              : item,
+          ),
+        );
+
+        await authFetch(`/api/admin/orders/${order.id}/status`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: order.status,
+            courierLat: lat,
+            courierLng: lng,
+            courierHeading: heading,
+            estimatedMinutes: order.estimated_minutes,
+          }),
+        }).catch(() => null);
+      },
+      () => setMessage("Não foi possível acessar a localização do celular."),
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 },
+    );
+
+    gpsWatchRef.current = watchId;
+  };
+
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     setMessage(null);
@@ -108,6 +192,7 @@ function AdminPage() {
   };
 
   const handleLogout = async () => {
+    stopGps();
     await supabase.auth.signOut();
     setIsAuthenticated(false);
     setProducts([]);
@@ -224,17 +309,56 @@ function AdminPage() {
       <div className="mb-5 flex items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-extrabold text-foreground">Painel Administrativo</h1>
-          <p className="text-sm text-muted-foreground">Pedidos pendentes: {totals.pending} • Total de pedidos: {totals.totalOrders}</p>
+          <p className="text-sm text-muted-foreground">Painel em tempo real para operação de pedidos e entregas.</p>
         </div>
         <button onClick={handleLogout} className="btn-soft">Sair</button>
       </div>
 
+      <section className="mb-6 grid gap-3 md:grid-cols-4">
+        <article className="glass-card p-4">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Pedidos</p>
+          <p className="text-2xl font-extrabold text-foreground">{totals.totalOrders}</p>
+        </article>
+        <article className="glass-card p-4">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Pendentes</p>
+          <p className="text-2xl font-extrabold text-foreground">{totals.pending}</p>
+        </article>
+        <article className="glass-card p-4">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">A caminho</p>
+          <p className="text-2xl font-extrabold text-foreground">{totals.onTheWay}</p>
+        </article>
+        <article className="glass-card p-4">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Faturamento</p>
+          <p className="text-2xl font-extrabold text-foreground">R$ {totals.revenue.toFixed(2)}</p>
+        </article>
+      </section>
+
       {message && <p className="mb-4 rounded-xl border border-border bg-card p-3 text-sm text-foreground">{message}</p>}
 
       <section className="glass-card mb-6 p-5">
-        <h2 className="mb-3 text-xl font-bold text-foreground">Pedidos</h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-xl font-bold text-foreground">Pedidos</h2>
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={customerSearch}
+              onChange={(event) => setCustomerSearch(event.target.value)}
+              placeholder="Buscar por cliente"
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
+            />
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as "all" | OrderRow["status"])}
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
+            >
+              <option value="all">Todos os status</option>
+              {orderStatuses.map((status) => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
+          </div>
+        </div>
         <div className="grid gap-3">
-          {orders.map((order) => (
+          {filteredOrders.map((order) => (
             <article key={order.id} className="rounded-2xl border border-border bg-card p-4">
               <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-start">
                 <div>
@@ -307,7 +431,11 @@ function AdminPage() {
                 <div className="grid gap-2">
                   <select
                     value={order.status}
-                    onChange={(event) => updateOrderStatus(order, event.target.value as OrderRow["status"])}
+                    onChange={(event) => {
+                      const next = event.target.value as OrderRow["status"];
+                      setOrders((current) => current.map((item) => (item.id === order.id ? { ...item, status: next } : item)));
+                      updateOrderStatus({ ...order, status: next }, next);
+                    }}
                     className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
                   >
                     {orderStatuses.map((status) => (
@@ -317,11 +445,16 @@ function AdminPage() {
                   <button onClick={() => updateOrderStatus(order, order.status)} className="btn-soft px-4 py-2 text-xs">
                     Atualizar localização
                   </button>
+                  {gpsOrderId === order.id ? (
+                    <button onClick={stopGps} className="btn-soft px-4 py-2 text-xs">Parar GPS ao vivo</button>
+                  ) : (
+                    <button onClick={() => startGps(order)} className="btn-hero px-4 py-2 text-xs">Iniciar GPS do celular</button>
+                  )}
                 </div>
               </div>
             </article>
           ))}
-          {!orders.length && <p className="text-sm text-muted-foreground">Nenhum pedido encontrado.</p>}
+          {!filteredOrders.length && <p className="text-sm text-muted-foreground">Nenhum pedido encontrado com os filtros atuais.</p>}
         </div>
       </section>
 

@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      checkout_error_logs: {
+        Row: {
+          created_at: string
+          error_context: string | null
+          error_message: string
+          id: string
+          request_payload: Json | null
+          route: string
+        }
+        Insert: {
+          created_at?: string
+          error_context?: string | null
+          error_message: string
+          id?: string
+          request_payload?: Json | null
+          route?: string
+        }
+        Update: {
+          created_at?: string
+          error_context?: string | null
+          error_message?: string
+          id?: string
+          request_payload?: Json | null
+          route?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -88,8 +115,9 @@ export type Database = {
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
           total: number
+          tracking_code: string
           updated_at: string
-          user_id: string
+          user_id: string | null
           whatsapp_message: string | null
         }
         Insert: {
@@ -111,8 +139,9 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           subtotal: number
           total: number
+          tracking_code: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           whatsapp_message?: string | null
         }
         Update: {
@@ -134,8 +163,9 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
           total?: number
+          tracking_code?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           whatsapp_message?: string | null
         }
         Relationships: []

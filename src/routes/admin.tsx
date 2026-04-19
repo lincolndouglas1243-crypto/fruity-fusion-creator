@@ -68,6 +68,40 @@ function AdminPage() {
   const [gpsOrderId, setGpsOrderId] = useState<string | null>(null);
   const gpsWatchRef = useRef<number | null>(null);
 
+  const playAdminAlert = () => {
+    try {
+      const audioCtx = new window.AudioContext();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.type = "triangle";
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.12, audioCtx.currentTime + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.22);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.24);
+    } catch {
+      // silêncio se o navegador bloquear áudio sem interação
+    }
+  };
+
+  const notifyAdmin = (title: string, body: string) => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+      new Notification(title, { body });
+      return;
+    }
+    if (Notification.permission === "default") {
+      Notification.requestPermission().then((permission) => {
+        if (permission === "granted") {
+          new Notification(title, { body });
+        }
+      });
+    }
+  };
+
   const filteredOrders = useMemo(() => {
     return orders.filter((item) => {
       const byStatus = statusFilter === "all" || item.status === statusFilter;
@@ -115,7 +149,26 @@ function AdminPage() {
     if (!isAuthenticated) return;
     const channel = supabase
       .channel("admin-orders-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => loadDashboard())
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
+        if (payload.eventType === "INSERT") {
+          const inserted = payload.new as Partial<OrderRow>;
+          const shortId = inserted.id?.slice(0, 8) ?? "novo";
+          playAdminAlert();
+          notifyAdmin("Novo pedido chegou", `Pedido #${shortId} aguardando confirmação.`);
+        }
+
+        if (payload.eventType === "UPDATE") {
+          const previous = payload.old as Partial<OrderRow>;
+          const next = payload.new as Partial<OrderRow>;
+          if (previous.status && next.status && previous.status !== next.status) {
+            const shortId = next.id?.slice(0, 8) ?? "pedido";
+            playAdminAlert();
+            notifyAdmin("Pedido mudou de status", `#${shortId}: ${previous.status} → ${next.status}`);
+          }
+        }
+
+        loadDashboard();
+      })
       .subscribe();
 
     return () => {

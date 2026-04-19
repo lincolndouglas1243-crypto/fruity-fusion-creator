@@ -11,8 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiOrdersRouteImport } from './routes/api.orders'
+import { Route as ApiOrdersOrderIdRouteImport } from './routes/api.orders.$orderId'
 import { Route as ApiAdminDashboardRouteImport } from './routes/api.admin.dashboard'
-import { Route as ApiOrdersRouteImport } from './routes/api.orders.'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,41 +24,51 @@ const ApiOrdersRoute = ApiOrdersRouteImport.update({
   path: '/api/orders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOrdersOrderIdRoute = ApiOrdersOrderIdRouteImport.update({
+  id: '/$orderId',
+  path: '/$orderId',
+  getParentRoute: () => ApiOrdersRoute,
+} as any)
 const ApiAdminDashboardRoute = ApiAdminDashboardRouteImport.update({
   id: '/api/admin/dashboard',
   path: '/api/admin/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiOrdersRoute = ApiOrdersRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ApiOrdersRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
-  '/api/orders/': typeof ApiOrdersRoute
   '/api/admin/dashboard': typeof ApiAdminDashboardRoute
+  '/api/orders/$orderId': typeof ApiOrdersOrderIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/api/orders': typeof ApiOrdersRoute
+  '/api/orders': typeof ApiOrdersRouteWithChildren
   '/api/admin/dashboard': typeof ApiAdminDashboardRoute
+  '/api/orders/$orderId': typeof ApiOrdersOrderIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
-  '/api/orders/': typeof ApiOrdersRoute
   '/api/admin/dashboard': typeof ApiAdminDashboardRoute
+  '/api/orders/$orderId': typeof ApiOrdersOrderIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/orders' | '/api/orders/' | '/api/admin/dashboard'
+  fullPaths:
+    | '/'
+    | '/api/orders'
+    | '/api/admin/dashboard'
+    | '/api/orders/$orderId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/orders' | '/api/admin/dashboard'
-  id: '__root__' | '/' | '/api/orders' | '/api/orders/' | '/api/admin/dashboard'
+  to: '/' | '/api/orders' | '/api/admin/dashboard' | '/api/orders/$orderId'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/orders'
+    | '/api/admin/dashboard'
+    | '/api/orders/$orderId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -83,6 +93,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/orders/$orderId': {
+      id: '/api/orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/api/orders/$orderId'
+      preLoaderRoute: typeof ApiOrdersOrderIdRouteImport
+      parentRoute: typeof ApiOrdersRoute
+    }
     '/api/admin/dashboard': {
       id: '/api/admin/dashboard'
       path: '/api/admin/dashboard'
@@ -90,22 +107,15 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/orders/': {
-      id: '/api/orders/'
-      path: '/'
-      fullPath: '/api/orders/'
-      preLoaderRoute: typeof ApiOrdersRouteImport
-      parentRoute: typeof ApiOrdersRoute
-    }
   }
 }
 
 interface ApiOrdersRouteChildren {
-  ApiOrdersRoute: typeof ApiOrdersRoute
+  ApiOrdersOrderIdRoute: typeof ApiOrdersOrderIdRoute
 }
 
 const ApiOrdersRouteChildren: ApiOrdersRouteChildren = {
-  ApiOrdersRoute: ApiOrdersRoute,
+  ApiOrdersOrderIdRoute: ApiOrdersOrderIdRoute,
 }
 
 const ApiOrdersRouteWithChildren = ApiOrdersRoute._addFileChildren(

@@ -17,7 +17,7 @@ function getBearerToken(request: Request) {
   return header.replace("Bearer ", "").trim();
 }
 
-export const Route = createFileRoute("/api/orders/")({
+export const Route = createFileRoute("/api/orders/$orderId")({
   server: {
     handlers: {
       GET: async ({ request, params }) => {

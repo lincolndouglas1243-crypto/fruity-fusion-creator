@@ -38,7 +38,7 @@ async function requireAdmin(request: Request) {
   return { supabaseAdmin } as const;
 }
 
-export const Route = createFileRoute("/api/admin/orders/status")({
+export const Route = createFileRoute("/api/admin/orders/$orderId/status")({
   server: {
     handlers: {
       PATCH: async ({ request, params }) => {

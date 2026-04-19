@@ -34,7 +34,7 @@ export const Route = createFileRoute("/api/courier/$courierCode/location")({
           _courier_code: params.courierCode,
           _lat: parsed.data.lat,
           _lng: parsed.data.lng,
-          _heading: parsed.data.heading ?? null,
+          _heading: parsed.data.heading ?? undefined,
         });
 
         if (error || !data?.length) {

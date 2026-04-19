@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { authFetch } from "@/lib/api-client";
 import { SectionReveal } from "./SectionReveal";
 import { formatCurrency, useCart } from "./cart-context";
 
@@ -46,7 +45,7 @@ function mapUrl(lat: number, lng: number) {
 }
 
 export function OrderTrackingSection() {
-  const { lastOrderId } = useCart();
+  const { lastOrderId, lastTrackingCode } = useCart();
   const [orderId, setOrderId] = useState("");
   const [activeOrder, setActiveOrder] = useState<OrderDetails | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
@@ -64,7 +63,9 @@ export function OrderTrackingSection() {
     setLoading(true);
     setError(null);
     try {
-      const result = await authFetch(`/api/orders/${id.trim()}`);
+      const response = await fetch(`/api/orders/${id.trim()}`);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result?.error || "Não foi possível carregar o pedido.");
       setActiveOrder(result.order as OrderDetails);
       setItems((result.items as OrderItem[]) ?? []);
       setOrderId(id.trim());
@@ -76,23 +77,24 @@ export function OrderTrackingSection() {
   };
 
   useEffect(() => {
-    if (lastOrderId) {
-      setOrderId(lastOrderId);
-      loadOrder(lastOrderId);
+    const preferredCode = lastTrackingCode ?? lastOrderId;
+    if (preferredCode) {
+      setOrderId(preferredCode);
+      loadOrder(preferredCode);
     }
-  }, [lastOrderId]);
+  }, [lastOrderId, lastTrackingCode]);
 
   useEffect(() => {
-    if (!orderId) return;
+    if (!activeOrder?.id) return;
     const channel = supabase
-      .channel(`order-track-${orderId}`)
+      .channel(`order-track-${activeOrder.id}`)
       .on(
         "postgres_changes",
         {
           event: "UPDATE",
           schema: "public",
           table: "orders",
-          filter: `id=eq.${orderId}`,
+          filter: `id=eq.${activeOrder.id}`,
         },
         (payload) => {
           const next = payload.new as Partial<OrderDetails>;
@@ -111,7 +113,7 @@ export function OrderTrackingSection() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [orderId]);
+  }, [activeOrder?.id]);
 
   return (
     <SectionReveal className="brand-shell mt-20">
@@ -123,7 +125,7 @@ export function OrderTrackingSection() {
           <input
             value={orderId}
             onChange={(event) => setOrderId(event.target.value)}
-            placeholder="Digite o ID do pedido"
+            placeholder="Digite o ID ou código de rastreio"
             className="min-w-[260px] flex-1 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
           />
           <button onClick={() => loadOrder(orderId)} disabled={loading} className="btn-hero">

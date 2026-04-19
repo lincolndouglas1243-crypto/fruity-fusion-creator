@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { authFetch } from "@/lib/api-client";
 
 type OrderStatus = "pending" | "accepted" | "preparing" | "on_the_way" | "delivered" | "cancelled";
 
@@ -16,6 +15,7 @@ type OrderItem = {
 
 type OrderDetails = {
   id: string;
+  tracking_code?: string;
   status: OrderStatus;
   total: number;
   created_at: string;
@@ -66,9 +66,11 @@ function OrderTrackingPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const response = await authFetch(`/api/orders/${orderId}`);
-        setOrder(response.order as OrderDetails);
-        setItems((response.items as OrderItem[]) ?? []);
+        const response = await fetch(`/api/orders/${orderId}`);
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body?.error || "Não foi possível carregar o rastreio.");
+        setOrder(body.order as OrderDetails);
+        setItems((body.items as OrderItem[]) ?? []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Não foi possível carregar o rastreio.");
       }
@@ -98,7 +100,9 @@ function OrderTrackingPage() {
     <main className="brand-shell py-24">
       <section className="glass-card p-7">
         <h1 className="text-4xl font-extrabold text-foreground">Rastreio Premium do Pedido</h1>
-        <p className="mt-2 text-muted-foreground">Pedido #{orderId.slice(0, 8)} • atualização ao vivo</p>
+        <p className="mt-2 text-muted-foreground">
+          {order?.tracking_code ? `Código ${order.tracking_code}` : `Pedido #${orderId.slice(0, 8)}`} • atualização ao vivo
+        </p>
 
         {error && <p className="mt-4 text-sm font-semibold text-destructive">{error}</p>}
 

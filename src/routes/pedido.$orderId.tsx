@@ -21,6 +21,7 @@ type OrderDetails = {
   created_at: string;
   courier_lat: number | null;
   courier_lng: number | null;
+  courier_heading: number | null;
   courier_updated_at: string | null;
   estimated_minutes: number | null;
 };
@@ -80,11 +81,29 @@ function OrderTrackingPage() {
   }, [orderId]);
 
   useEffect(() => {
+    const timer = window.setInterval(async () => {
+      try {
+        const response = await fetch(`/api/orders/${orderId}`);
+        if (!response.ok) return;
+        const body = await response.json();
+        setOrder(body.order as OrderDetails);
+        setItems((body.items as OrderItem[]) ?? []);
+      } catch {
+        // mantém última versão em tela
+      }
+    }, 15000);
+
+    return () => window.clearInterval(timer);
+  }, [orderId]);
+
+  useEffect(() => {
+    if (!order?.id) return;
+
     const channel = supabase
-      .channel(`public-track-${orderId}`)
+      .channel(`public-track-${order.id}`)
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${orderId}` },
+        { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${order.id}` },
         (payload) => {
           setOrder((current) => (current ? { ...current, ...(payload.new as Partial<OrderDetails>) } : current));
         },
@@ -94,7 +113,7 @@ function OrderTrackingPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [orderId]);
+  }, [order?.id]);
 
   return (
     <main className="brand-shell py-24">

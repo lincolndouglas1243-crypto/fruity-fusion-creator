@@ -98,6 +98,7 @@ export type Database = {
       orders: {
         Row: {
           accepted_at: string | null
+          courier_code: string
           courier_heading: number | null
           courier_lat: number | null
           courier_lng: number | null
@@ -122,6 +123,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          courier_code?: string
           courier_heading?: number | null
           courier_lat?: number | null
           courier_lng?: number | null
@@ -146,6 +148,7 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          courier_code?: string
           courier_heading?: number | null
           courier_lat?: number | null
           courier_lng?: number | null
@@ -388,6 +391,23 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      update_courier_location: {
+        Args: {
+          _courier_code: string
+          _heading?: number
+          _lat: number
+          _lng: number
+        }
+        Returns: {
+          courier_heading: number
+          courier_lat: number
+          courier_lng: number
+          courier_updated_at: string
+          id: string
+          status: Database["public"]["Enums"]["order_status"]
+          tracking_code: string
+        }[]
       }
     }
     Enums: {

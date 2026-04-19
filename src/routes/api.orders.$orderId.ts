@@ -42,7 +42,7 @@ export const Route = createFileRoute("/api/orders/$orderId")({
 
         const { data: order } = await supabase
           .from("orders")
-          .select("id, tracking_code, user_id, status, total, created_at, courier_lat, courier_lng, courier_updated_at, estimated_minutes")
+          .select("id, tracking_code, user_id, status, total, created_at, courier_lat, courier_lng, courier_heading, courier_updated_at, estimated_minutes")
           .eq(isUuid ? "id" : "tracking_code", lookup)
           .maybeSingle();
         if (!order) return Response.json({ error: "Pedido não encontrado" }, { status: 404 });

@@ -12,12 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PedidoOrderIdRouteImport } from './routes/pedido.$orderId'
+import { Route as EntregaCourierCodeRouteImport } from './routes/entrega.$courierCode'
 import { Route as ApiOrdersRouteImport } from './routes/api.orders'
 import { Route as ApiOrdersMineRouteImport } from './routes/api.orders.mine'
 import { Route as ApiOrdersOrderIdRouteImport } from './routes/api.orders.$orderId'
 import { Route as ApiAdminPromotionsRouteImport } from './routes/api.admin.promotions'
 import { Route as ApiAdminProductsRouteImport } from './routes/api.admin.products'
 import { Route as ApiAdminDashboardRouteImport } from './routes/api.admin.dashboard'
+import { Route as ApiCourierCourierCodeLocationRouteImport } from './routes/api.courier.$courierCode.location'
 import { Route as ApiAdminOrdersOrderIdStatusRouteImport } from './routes/api.admin.orders.$orderId.status'
 
 const AdminRoute = AdminRouteImport.update({
@@ -33,6 +35,11 @@ const IndexRoute = IndexRouteImport.update({
 const PedidoOrderIdRoute = PedidoOrderIdRouteImport.update({
   id: '/pedido/$orderId',
   path: '/pedido/$orderId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntregaCourierCodeRoute = EntregaCourierCodeRouteImport.update({
+  id: '/entrega/$courierCode',
+  path: '/entrega/$courierCode',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOrdersRoute = ApiOrdersRouteImport.update({
@@ -65,6 +72,12 @@ const ApiAdminDashboardRoute = ApiAdminDashboardRouteImport.update({
   path: '/api/admin/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCourierCourierCodeLocationRoute =
+  ApiCourierCourierCodeLocationRouteImport.update({
+    id: '/api/courier/$courierCode/location',
+    path: '/api/courier/$courierCode/location',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminOrdersOrderIdStatusRoute =
   ApiAdminOrdersOrderIdStatusRouteImport.update({
     id: '/api/admin/orders/$orderId/status',
@@ -76,24 +89,28 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
+  '/entrega/$courierCode': typeof EntregaCourierCodeRoute
   '/pedido/$orderId': typeof PedidoOrderIdRoute
   '/api/admin/dashboard': typeof ApiAdminDashboardRoute
   '/api/admin/products': typeof ApiAdminProductsRoute
   '/api/admin/promotions': typeof ApiAdminPromotionsRoute
   '/api/orders/$orderId': typeof ApiOrdersOrderIdRoute
   '/api/orders/mine': typeof ApiOrdersMineRoute
+  '/api/courier/$courierCode/location': typeof ApiCourierCourierCodeLocationRoute
   '/api/admin/orders/$orderId/status': typeof ApiAdminOrdersOrderIdStatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
+  '/entrega/$courierCode': typeof EntregaCourierCodeRoute
   '/pedido/$orderId': typeof PedidoOrderIdRoute
   '/api/admin/dashboard': typeof ApiAdminDashboardRoute
   '/api/admin/products': typeof ApiAdminProductsRoute
   '/api/admin/promotions': typeof ApiAdminPromotionsRoute
   '/api/orders/$orderId': typeof ApiOrdersOrderIdRoute
   '/api/orders/mine': typeof ApiOrdersMineRoute
+  '/api/courier/$courierCode/location': typeof ApiCourierCourierCodeLocationRoute
   '/api/admin/orders/$orderId/status': typeof ApiAdminOrdersOrderIdStatusRoute
 }
 export interface FileRoutesById {
@@ -101,12 +118,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
+  '/entrega/$courierCode': typeof EntregaCourierCodeRoute
   '/pedido/$orderId': typeof PedidoOrderIdRoute
   '/api/admin/dashboard': typeof ApiAdminDashboardRoute
   '/api/admin/products': typeof ApiAdminProductsRoute
   '/api/admin/promotions': typeof ApiAdminPromotionsRoute
   '/api/orders/$orderId': typeof ApiOrdersOrderIdRoute
   '/api/orders/mine': typeof ApiOrdersMineRoute
+  '/api/courier/$courierCode/location': typeof ApiCourierCourierCodeLocationRoute
   '/api/admin/orders/$orderId/status': typeof ApiAdminOrdersOrderIdStatusRoute
 }
 export interface FileRouteTypes {
@@ -115,36 +134,42 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/api/orders'
+    | '/entrega/$courierCode'
     | '/pedido/$orderId'
     | '/api/admin/dashboard'
     | '/api/admin/products'
     | '/api/admin/promotions'
     | '/api/orders/$orderId'
     | '/api/orders/mine'
+    | '/api/courier/$courierCode/location'
     | '/api/admin/orders/$orderId/status'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
     | '/api/orders'
+    | '/entrega/$courierCode'
     | '/pedido/$orderId'
     | '/api/admin/dashboard'
     | '/api/admin/products'
     | '/api/admin/promotions'
     | '/api/orders/$orderId'
     | '/api/orders/mine'
+    | '/api/courier/$courierCode/location'
     | '/api/admin/orders/$orderId/status'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/api/orders'
+    | '/entrega/$courierCode'
     | '/pedido/$orderId'
     | '/api/admin/dashboard'
     | '/api/admin/products'
     | '/api/admin/promotions'
     | '/api/orders/$orderId'
     | '/api/orders/mine'
+    | '/api/courier/$courierCode/location'
     | '/api/admin/orders/$orderId/status'
   fileRoutesById: FileRoutesById
 }
@@ -152,10 +177,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   ApiOrdersRoute: typeof ApiOrdersRouteWithChildren
+  EntregaCourierCodeRoute: typeof EntregaCourierCodeRoute
   PedidoOrderIdRoute: typeof PedidoOrderIdRoute
   ApiAdminDashboardRoute: typeof ApiAdminDashboardRoute
   ApiAdminProductsRoute: typeof ApiAdminProductsRoute
   ApiAdminPromotionsRoute: typeof ApiAdminPromotionsRoute
+  ApiCourierCourierCodeLocationRoute: typeof ApiCourierCourierCodeLocationRoute
   ApiAdminOrdersOrderIdStatusRoute: typeof ApiAdminOrdersOrderIdStatusRoute
 }
 
@@ -180,6 +207,13 @@ declare module '@tanstack/react-router' {
       path: '/pedido/$orderId'
       fullPath: '/pedido/$orderId'
       preLoaderRoute: typeof PedidoOrderIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrega/$courierCode': {
+      id: '/entrega/$courierCode'
+      path: '/entrega/$courierCode'
+      fullPath: '/entrega/$courierCode'
+      preLoaderRoute: typeof EntregaCourierCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/orders': {
@@ -224,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/courier/$courierCode/location': {
+      id: '/api/courier/$courierCode/location'
+      path: '/api/courier/$courierCode/location'
+      fullPath: '/api/courier/$courierCode/location'
+      preLoaderRoute: typeof ApiCourierCourierCodeLocationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/orders/$orderId/status': {
       id: '/api/admin/orders/$orderId/status'
       path: '/api/admin/orders/$orderId/status'
@@ -252,10 +293,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   ApiOrdersRoute: ApiOrdersRouteWithChildren,
+  EntregaCourierCodeRoute: EntregaCourierCodeRoute,
   PedidoOrderIdRoute: PedidoOrderIdRoute,
   ApiAdminDashboardRoute: ApiAdminDashboardRoute,
   ApiAdminProductsRoute: ApiAdminProductsRoute,
   ApiAdminPromotionsRoute: ApiAdminPromotionsRoute,
+  ApiCourierCourierCodeLocationRoute: ApiCourierCourierCodeLocationRoute,
   ApiAdminOrdersOrderIdStatusRoute: ApiAdminOrdersOrderIdStatusRoute,
 }
 export const routeTree = rootRouteImport

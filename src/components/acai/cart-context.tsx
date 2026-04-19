@@ -1,5 +1,4 @@
 import { createContext, useContext, useMemo, useState } from "react";
-import { authFetch } from "@/lib/api-client";
 
 export type CartItem = {
   id: string;
@@ -112,8 +111,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       setIsSubmitting(true);
       try {
-        const response = await authFetch("/api/orders", {
+        const response = await fetch("/api/orders", {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             customerName: payload.customerName,
             customerPhone: payload.customerPhone,
@@ -130,12 +130,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           }),
         });
 
-        setLastOrderId(response.orderId ?? null);
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(body?.error || "Não foi possível finalizar o pedido.");
+        }
+
+        setLastOrderId(body.orderId ?? null);
         setItems([]);
         return {
-          orderId: response.orderId,
-          status: response.status,
-          total: response.total,
+          orderId: body.orderId,
+          status: body.status,
+          total: body.total,
         };
       } finally {
         setIsSubmitting(false);

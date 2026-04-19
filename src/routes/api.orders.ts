@@ -1,16 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
 import { createFileRoute } from "@tanstack/react-router";
 import { createOrderSchema } from "@/lib/order-schemas";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
-
-function getAdminClient() {
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) throw new Error("Supabase server env not configured");
-  return createClient<Database>(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
 
 function getBearerToken(request: Request) {
   const header = request.headers.get("authorization");
@@ -28,11 +19,14 @@ export const Route = createFileRoute("/api/orders")({
       POST: async ({ request }) => {
         try {
           const token = getBearerToken(request);
-          if (!token) return Response.json({ error: "Não autorizado" }, { status: 401 });
+          let userId = crypto.randomUUID() as Database["public"]["Tables"]["orders"]["Insert"]["user_id"];
 
-          const supabaseAdmin = getAdminClient();
-          const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
-          if (userError || !userData.user) return Response.json({ error: "Sessão inválida" }, { status: 401 });
+          if (token) {
+            const { data: userData } = await supabaseAdmin.auth.getUser(token);
+            if (userData.user?.id) {
+              userId = userData.user.id;
+            }
+          }
 
           const raw = await request.json();
           const parsed = createOrderSchema.safeParse(raw);
@@ -47,7 +41,7 @@ export const Route = createFileRoute("/api/orders")({
           const { data: order, error: orderError } = await supabaseAdmin
             .from("orders")
             .insert({
-              user_id: userData.user.id,
+              user_id: userId,
               status: "pending",
               customer_name: input.customerName,
               customer_phone: input.customerPhone,

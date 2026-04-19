@@ -11,8 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiOrdersRouteImport } from './routes/api.orders'
+import { Route as ApiOrdersMineRouteImport } from './routes/api.orders.mine'
 import { Route as ApiOrdersOrderIdRouteImport } from './routes/api.orders.$orderId'
+import { Route as ApiAdminPromotionsRouteImport } from './routes/api.admin.promotions'
+import { Route as ApiAdminProductsRouteImport } from './routes/api.admin.products'
 import { Route as ApiAdminDashboardRouteImport } from './routes/api.admin.dashboard'
+import { Route as ApiAdminOrdersStatusRouteImport } from './routes/api.admin.orders..status'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,14 +28,34 @@ const ApiOrdersRoute = ApiOrdersRouteImport.update({
   path: '/api/orders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOrdersMineRoute = ApiOrdersMineRouteImport.update({
+  id: '/mine',
+  path: '/mine',
+  getParentRoute: () => ApiOrdersRoute,
+} as any)
 const ApiOrdersOrderIdRoute = ApiOrdersOrderIdRouteImport.update({
   id: '/$orderId',
   path: '/$orderId',
   getParentRoute: () => ApiOrdersRoute,
 } as any)
+const ApiAdminPromotionsRoute = ApiAdminPromotionsRouteImport.update({
+  id: '/api/admin/promotions',
+  path: '/api/admin/promotions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminProductsRoute = ApiAdminProductsRouteImport.update({
+  id: '/api/admin/products',
+  path: '/api/admin/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminDashboardRoute = ApiAdminDashboardRouteImport.update({
   id: '/api/admin/dashboard',
   path: '/api/admin/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminOrdersStatusRoute = ApiAdminOrdersStatusRouteImport.update({
+  id: '/api/admin/orders/status',
+  path: '/api/admin/orders/status',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -39,20 +63,32 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
   '/api/admin/dashboard': typeof ApiAdminDashboardRoute
+  '/api/admin/products': typeof ApiAdminProductsRoute
+  '/api/admin/promotions': typeof ApiAdminPromotionsRoute
   '/api/orders/$orderId': typeof ApiOrdersOrderIdRoute
+  '/api/orders/mine': typeof ApiOrdersMineRoute
+  '/api/admin/orders/status': typeof ApiAdminOrdersStatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
   '/api/admin/dashboard': typeof ApiAdminDashboardRoute
+  '/api/admin/products': typeof ApiAdminProductsRoute
+  '/api/admin/promotions': typeof ApiAdminPromotionsRoute
   '/api/orders/$orderId': typeof ApiOrdersOrderIdRoute
+  '/api/orders/mine': typeof ApiOrdersMineRoute
+  '/api/admin/orders/status': typeof ApiAdminOrdersStatusRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
   '/api/admin/dashboard': typeof ApiAdminDashboardRoute
+  '/api/admin/products': typeof ApiAdminProductsRoute
+  '/api/admin/promotions': typeof ApiAdminPromotionsRoute
   '/api/orders/$orderId': typeof ApiOrdersOrderIdRoute
+  '/api/orders/mine': typeof ApiOrdersMineRoute
+  '/api/admin/orders/status': typeof ApiAdminOrdersStatusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -60,21 +96,40 @@ export interface FileRouteTypes {
     | '/'
     | '/api/orders'
     | '/api/admin/dashboard'
+    | '/api/admin/products'
+    | '/api/admin/promotions'
     | '/api/orders/$orderId'
+    | '/api/orders/mine'
+    | '/api/admin/orders/status'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/orders' | '/api/admin/dashboard' | '/api/orders/$orderId'
+  to:
+    | '/'
+    | '/api/orders'
+    | '/api/admin/dashboard'
+    | '/api/admin/products'
+    | '/api/admin/promotions'
+    | '/api/orders/$orderId'
+    | '/api/orders/mine'
+    | '/api/admin/orders/status'
   id:
     | '__root__'
     | '/'
     | '/api/orders'
     | '/api/admin/dashboard'
+    | '/api/admin/products'
+    | '/api/admin/promotions'
     | '/api/orders/$orderId'
+    | '/api/orders/mine'
+    | '/api/admin/orders/status'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiOrdersRoute: typeof ApiOrdersRouteWithChildren
   ApiAdminDashboardRoute: typeof ApiAdminDashboardRoute
+  ApiAdminProductsRoute: typeof ApiAdminProductsRoute
+  ApiAdminPromotionsRoute: typeof ApiAdminPromotionsRoute
+  ApiAdminOrdersStatusRoute: typeof ApiAdminOrdersStatusRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -93,12 +148,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/orders/mine': {
+      id: '/api/orders/mine'
+      path: '/mine'
+      fullPath: '/api/orders/mine'
+      preLoaderRoute: typeof ApiOrdersMineRouteImport
+      parentRoute: typeof ApiOrdersRoute
+    }
     '/api/orders/$orderId': {
       id: '/api/orders/$orderId'
       path: '/$orderId'
       fullPath: '/api/orders/$orderId'
       preLoaderRoute: typeof ApiOrdersOrderIdRouteImport
       parentRoute: typeof ApiOrdersRoute
+    }
+    '/api/admin/promotions': {
+      id: '/api/admin/promotions'
+      path: '/api/admin/promotions'
+      fullPath: '/api/admin/promotions'
+      preLoaderRoute: typeof ApiAdminPromotionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/products': {
+      id: '/api/admin/products'
+      path: '/api/admin/products'
+      fullPath: '/api/admin/products'
+      preLoaderRoute: typeof ApiAdminProductsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/admin/dashboard': {
       id: '/api/admin/dashboard'
@@ -107,15 +183,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/orders/status': {
+      id: '/api/admin/orders/status'
+      path: '/api/admin/orders/status'
+      fullPath: '/api/admin/orders/status'
+      preLoaderRoute: typeof ApiAdminOrdersStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface ApiOrdersRouteChildren {
   ApiOrdersOrderIdRoute: typeof ApiOrdersOrderIdRoute
+  ApiOrdersMineRoute: typeof ApiOrdersMineRoute
 }
 
 const ApiOrdersRouteChildren: ApiOrdersRouteChildren = {
   ApiOrdersOrderIdRoute: ApiOrdersOrderIdRoute,
+  ApiOrdersMineRoute: ApiOrdersMineRoute,
 }
 
 const ApiOrdersRouteWithChildren = ApiOrdersRoute._addFileChildren(
@@ -126,7 +211,19 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiOrdersRoute: ApiOrdersRouteWithChildren,
   ApiAdminDashboardRoute: ApiAdminDashboardRoute,
+  ApiAdminProductsRoute: ApiAdminProductsRoute,
+  ApiAdminPromotionsRoute: ApiAdminPromotionsRoute,
+  ApiAdminOrdersStatusRoute: ApiAdminOrdersStatusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

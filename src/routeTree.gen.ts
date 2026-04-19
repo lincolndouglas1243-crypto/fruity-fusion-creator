@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiOrdersRouteImport } from './routes/api.orders'
 import { Route as ApiOrdersMineRouteImport } from './routes/api.orders.mine'
@@ -18,6 +19,11 @@ import { Route as ApiAdminProductsRouteImport } from './routes/api.admin.product
 import { Route as ApiAdminDashboardRouteImport } from './routes/api.admin.dashboard'
 import { Route as ApiAdminOrdersOrderIdStatusRouteImport } from './routes/api.admin.orders.$orderId.status'
 
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -62,6 +68,7 @@ const ApiAdminOrdersOrderIdStatusRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
   '/api/admin/dashboard': typeof ApiAdminDashboardRoute
   '/api/admin/products': typeof ApiAdminProductsRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
   '/api/admin/dashboard': typeof ApiAdminDashboardRoute
   '/api/admin/products': typeof ApiAdminProductsRoute
@@ -83,6 +91,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
   '/api/admin/dashboard': typeof ApiAdminDashboardRoute
   '/api/admin/products': typeof ApiAdminProductsRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/api/orders'
     | '/api/admin/dashboard'
     | '/api/admin/products'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/api/orders'
     | '/api/admin/dashboard'
     | '/api/admin/products'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/api/orders'
     | '/api/admin/dashboard'
     | '/api/admin/products'
@@ -126,6 +138,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   ApiOrdersRoute: typeof ApiOrdersRouteWithChildren
   ApiAdminDashboardRoute: typeof ApiAdminDashboardRoute
   ApiAdminProductsRoute: typeof ApiAdminProductsRoute
@@ -135,6 +148,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -210,6 +230,7 @@ const ApiOrdersRouteWithChildren = ApiOrdersRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   ApiOrdersRoute: ApiOrdersRouteWithChildren,
   ApiAdminDashboardRoute: ApiAdminDashboardRoute,
   ApiAdminProductsRoute: ApiAdminProductsRoute,
@@ -219,3 +240,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

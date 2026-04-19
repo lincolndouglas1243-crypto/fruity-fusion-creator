@@ -1,9 +1,37 @@
 import { motion } from "framer-motion";
+import { useState } from "react";
 import { SectionReveal } from "./SectionReveal";
 import { formatCurrency, useCart } from "./cart-context";
 
 export function CartSummarySection() {
-  const { items, total, checkoutUrl, increaseQuantity, decreaseQuantity, removeItem, clearCart } = useCart();
+  const { items, total, increaseQuantity, decreaseQuantity, removeItem, clearCart, submitOrder, isSubmitting, lastOrderId } =
+    useCart();
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [notes, setNotes] = useState("");
+  const [deliveryFee, setDeliveryFee] = useState(6);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  const handleSubmitOrder = async () => {
+    setFeedback(null);
+    try {
+      const result = await submitOrder({
+        customerName,
+        customerPhone,
+        deliveryAddress,
+        notes,
+        deliveryFee,
+      });
+      setFeedback(`Pedido #${result.orderId.slice(0, 8)} enviado com sucesso!`);
+      setCustomerName("");
+      setCustomerPhone("");
+      setDeliveryAddress("");
+      setNotes("");
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Não foi possível finalizar o pedido.");
+    }
+  };
 
   return (
     <SectionReveal className="brand-shell mt-20">
@@ -19,7 +47,7 @@ export function CartSummarySection() {
 
         {items.length === 0 ? (
           <p className="mt-5 rounded-2xl border border-border bg-card p-4 text-muted-foreground">
-            Seu carrinho está vazio. Adicione produtos para gerar o pedido automático no WhatsApp.
+            Seu carrinho está vazio. Adicione produtos para finalizar o pedido direto no site.
           </p>
         ) : (
           <div className="mt-5 space-y-3">
@@ -58,17 +86,57 @@ export function CartSummarySection() {
             <p className="text-sm font-semibold text-muted-foreground">Total</p>
             <p className="text-2xl font-extrabold text-foreground">{formatCurrency(total)}</p>
           </div>
-          <motion.a
+
+          <div className="mt-4 grid gap-3">
+            <input
+              value={customerName}
+              onChange={(event) => setCustomerName(event.target.value)}
+              placeholder="Nome completo"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
+            />
+            <input
+              value={customerPhone}
+              onChange={(event) => setCustomerPhone(event.target.value)}
+              placeholder="Telefone"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
+            />
+            <input
+              value={deliveryAddress}
+              onChange={(event) => setDeliveryAddress(event.target.value)}
+              placeholder="Endereço de entrega"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
+            />
+            <textarea
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              placeholder="Observações (opcional)"
+              className="min-h-20 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
+            />
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={deliveryFee}
+              onChange={(event) => setDeliveryFee(Number(event.target.value || 0))}
+              placeholder="Taxa de entrega"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
+            />
+          </div>
+
+          <motion.button
+            type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            href={checkoutUrl}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Finalizar pedido no WhatsApp"
+            onClick={handleSubmitOrder}
+            disabled={isSubmitting || items.length === 0}
             className="btn-hero mt-4 w-full"
           >
-            Finalizar pedido rápido no WhatsApp
-          </motion.a>
+            {isSubmitting ? "Enviando pedido..." : "Finalizar pedido no site"}
+          </motion.button>
+
+          {(feedback || lastOrderId) && (
+            <p className="mt-3 text-sm font-medium text-foreground">{feedback ?? `Último pedido: #${lastOrderId?.slice(0, 8)}`}</p>
+          )}
         </div>
       </div>
     </SectionReveal>

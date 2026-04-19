@@ -1,4 +1,5 @@
 import { createContext, useContext, useMemo, useState } from "react";
+import { authFetch } from "@/lib/api-client";
 
 export type CartItem = {
   id: string;
@@ -19,10 +20,16 @@ type CartContextValue = {
   decreaseQuantity: (id: string) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
-  checkoutUrl: string;
+  submitOrder: (payload: {
+    customerName: string;
+    customerPhone: string;
+    deliveryAddress: string;
+    notes?: string;
+    deliveryFee: number;
+  }) => Promise<{ orderId: string; status: string; total: number }>;
+  isSubmitting: boolean;
+  lastOrderId: string | null;
 };
-
-const WHATSAPP_PHONE = "5500000000000";
 
 const CartContext = createContext<CartContextValue | null>(null);
 
@@ -42,45 +49,24 @@ function mergeItem(items: CartItem[], incoming: CartItem) {
   );
 }
 
-function buildCheckoutMessage(items: CartItem[], total: number) {
-  if (!items.length) {
-    return "Olá! Quero fazer um pedido de açaí. Pode me ajudar?";
-  }
-
-  const lines = items.map((item, index) => {
-    const toppingsText = item.toppings.length ? item.toppings.join(", ") : "Sem adicionais";
-    const sizeText = item.size ? ` | Tamanho: ${item.size}` : "";
-    return `${index + 1}. ${item.quantity}x ${item.name}${sizeText}\n   Adicionais: ${toppingsText}\n   Valor item: ${formatCurrency(item.unitPrice * item.quantity)}`;
-  });
-
-  return [
-    "Olá! Quero fechar meu pedido:\n",
-    ...lines,
-    `\nTotal do pedido: ${formatCurrency(total)}`,
-    "\nPode confirmar disponibilidade e tempo de entrega?",
-  ].join("\n");
-}
-
 export function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
 
   const itemCount = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
   const total = useMemo(() => items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0), [items]);
-
-  const checkoutUrl = useMemo(() => {
-    const message = buildCheckoutMessage(items, total);
-    return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
-  }, [items, total]);
 
   const value: CartContextValue = {
     items,
     itemCount,
     total,
-    checkoutUrl,
+    isSubmitting,
+    lastOrderId,
     addPresetItem: ({ name, price }) => {
       const item: CartItem = {
         id: crypto.randomUUID(),
@@ -119,6 +105,42 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setItems((current) => current.filter((item) => item.id !== id));
     },
     clearCart: () => setItems([]),
+    submitOrder: async (payload) => {
+      if (!items.length) {
+        throw new Error("Adicione ao menos 1 item ao carrinho.");
+      }
+
+      setIsSubmitting(true);
+      try {
+        const response = await authFetch("/api/orders", {
+          method: "POST",
+          body: JSON.stringify({
+            customerName: payload.customerName,
+            customerPhone: payload.customerPhone,
+            deliveryAddress: payload.deliveryAddress,
+            notes: payload.notes,
+            deliveryFee: payload.deliveryFee,
+            items: items.map((item) => ({
+              name: item.name,
+              size: item.size,
+              toppings: item.toppings,
+              unitPrice: item.unitPrice,
+              quantity: item.quantity,
+            })),
+          }),
+        });
+
+        setLastOrderId(response.orderId ?? null);
+        setItems([]);
+        return {
+          orderId: response.orderId,
+          status: response.status,
+          total: response.total,
+        };
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

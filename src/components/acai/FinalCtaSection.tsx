@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useCart } from "./cart-context";
 
 export function FinalCtaSection() {
-  const { checkoutUrl, itemCount } = useCart();
+  const { itemCount } = useCart();
 
   return (
     <section id="pedido" className="brand-shell mt-20">
@@ -11,18 +11,16 @@ export function FinalCtaSection() {
           Seu próximo pedido de açaí começa agora.
         </h2>
         <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-          Clique no WhatsApp e envie automaticamente seu carrinho com tamanho, adicionais e valor total.
+          Finalize seu pedido com pagamento e status acompanhados em tempo real, sem sair do site.
         </p>
         <motion.a
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.98 }}
-          href={checkoutUrl}
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Fazer pedido no WhatsApp"
+          href="#carrinho"
+          aria-label="Ir para resumo do pedido"
           className="btn-hero mt-6"
         >
-          {itemCount > 0 ? `Finalizar ${itemCount} item(ns) no WhatsApp` : "Pedir no WhatsApp"}
+          {itemCount > 0 ? `Finalizar ${itemCount} item(ns) agora` : "Começar pedido"}
         </motion.a>
       </div>
     </section>

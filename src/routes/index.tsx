@@ -11,7 +11,6 @@ import { Navbar } from "@/components/acai/Navbar";
 import { PromotionsSection } from "@/components/acai/PromotionsSection";
 import { StatsStrip } from "@/components/acai/StatsStrip";
 import { TestimonialsSection } from "@/components/acai/TestimonialsSection";
-import { WhatsappFloatButton } from "@/components/acai/WhatsappFloatButton";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,7 +19,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Landing page premium para loja de açaí gourmet: cardápio, monte seu açaí, promoções, avaliações e pedido rápido no WhatsApp.",
+            "Landing page premium para loja de açaí gourmet: cardápio, monte seu açaí, promoções, avaliações e pedido 100% pelo site.",
       },
       { property: "og:title", content: "Açaí Prime Delivery | O Melhor Açaí da Cidade" },
       {
@@ -50,7 +49,6 @@ function Index() {
         <AboutContactSection />
         <FinalCtaSection />
         <FooterSection />
-        <WhatsappFloatButton />
       </div>
     </CartProvider>
   );

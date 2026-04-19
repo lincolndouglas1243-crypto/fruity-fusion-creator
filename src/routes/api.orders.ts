@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createOrderSchema } from "@/lib/order-schemas";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Database } from "@/integrations/supabase/types";
 
 function getBearerToken(request: Request) {
   const header = request.headers.get("authorization");
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/api/orders")({
       POST: async ({ request }) => {
         try {
           const token = getBearerToken(request);
-          let userId = crypto.randomUUID();
+          let userId = crypto.randomUUID() as Database["public"]["Tables"]["orders"]["Insert"]["user_id"];
 
           if (token) {
             const { data: userData } = await supabaseAdmin.auth.getUser(token);

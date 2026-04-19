@@ -31,10 +31,6 @@ export const Route = createFileRoute("/api/orders/$orderId")({
         const lookup = params.orderId.trim();
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(lookup);
 
-        const orderQuery = supabaseAdmin
-          .from("orders")
-          .select("id, tracking_code, user_id, status, total, created_at, courier_lat, courier_lng, courier_updated_at, estimated_minutes");
-
         const { data: order } = await supabaseAdmin
           .from("orders")
           .select("id, tracking_code, user_id, status, total, created_at, courier_lat, courier_lng, courier_updated_at, estimated_minutes")

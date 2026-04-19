@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AboutContactSection } from "@/components/acai/AboutContactSection";
 import { BuildYourOwnSection } from "@/components/acai/BuildYourOwnSection";
+import { CartSummarySection } from "@/components/acai/CartSummarySection";
+import { CartProvider } from "@/components/acai/cart-context";
 import { FinalCtaSection } from "@/components/acai/FinalCtaSection";
 import { FooterSection } from "@/components/acai/FooterSection";
 import { HeroSection } from "@/components/acai/HeroSection";
@@ -35,18 +37,21 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <div className="dark">
-      <Navbar />
-      <HeroSection />
-      <StatsStrip />
-      <MenuSection />
-      <BuildYourOwnSection />
-      <PromotionsSection />
-      <TestimonialsSection />
-      <AboutContactSection />
-      <FinalCtaSection />
-      <FooterSection />
-      <WhatsappFloatButton />
-    </div>
+    <CartProvider>
+      <div className="dark">
+        <Navbar />
+        <HeroSection />
+        <StatsStrip />
+        <MenuSection />
+        <BuildYourOwnSection />
+        <CartSummarySection />
+        <PromotionsSection />
+        <TestimonialsSection />
+        <AboutContactSection />
+        <FinalCtaSection />
+        <FooterSection />
+        <WhatsappFloatButton />
+      </div>
+    </CartProvider>
   );
 }

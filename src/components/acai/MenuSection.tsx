@@ -3,34 +3,37 @@ import acaiCup1 from "@/assets/acai-cup-1.jpg";
 import acaiCup2 from "@/assets/acai-cup-2.jpg";
 import acaiCup3 from "@/assets/acai-cup-3.jpg";
 import { SectionReveal } from "./SectionReveal";
+import { formatCurrency, useCart } from "./cart-context";
 
 const items = [
   {
     image: acaiCup1,
     title: "Açaí Supreme",
     description: "Açaí cremoso, morango, banana, leite condensado e granola premium.",
-    price: "R$ 29,90",
+    price: 29.9,
     badge: "Mais vendido",
   },
   {
     image: acaiCup2,
     title: "Dark Berry",
     description: "Mix de frutas vermelhas, kiwi, crocante de chocolate e mel especial.",
-    price: "R$ 31,90",
+    price: 31.9,
     badge: "Gourmet",
   },
   {
     image: acaiCup3,
     title: "Neon Tropical",
     description: "Camadas artesanais com toppings exclusivos e finalização cremosa.",
-    price: "R$ 33,90",
+    price: 33.9,
     badge: "Oferta do dia",
   },
 ];
 
 export function MenuSection() {
+  const { addPresetItem } = useCart();
+
   return (
-    <SectionReveal className="brand-shell mt-20" >
+    <SectionReveal className="brand-shell mt-20">
       <div className="mb-8 text-center">
         <h2 id="cardapio" className="text-3xl font-extrabold text-foreground sm:text-4xl">
           Cardápio Premium
@@ -64,8 +67,10 @@ export function MenuSection() {
               <h3 className="text-2xl font-extrabold text-foreground">{item.title}</h3>
               <p className="text-muted-foreground">{item.description}</p>
               <div className="flex items-center justify-between pt-2">
-                <p className="text-xl font-extrabold text-foreground">{item.price}</p>
-                <button className="btn-soft px-4 py-2 text-xs">Adicionar</button>
+                <p className="text-xl font-extrabold text-foreground">{formatCurrency(item.price)}</p>
+                <button onClick={() => addPresetItem({ name: item.title, price: item.price })} className="btn-soft px-4 py-2 text-xs">
+                  Adicionar
+                </button>
               </div>
             </div>
           </motion.article>

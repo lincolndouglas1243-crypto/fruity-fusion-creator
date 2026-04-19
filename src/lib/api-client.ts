@@ -5,7 +5,7 @@ export async function authFetch(path: string, init?: RequestInit) {
   const token = data.session?.access_token;
 
   if (!token) {
-    throw new Error("Sua sessão não está ativa no momento.");
+    throw new Error("Não foi possível concluir a ação.");
   }
 
   const headers = new Headers(init?.headers ?? {});

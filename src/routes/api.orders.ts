@@ -1,7 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createOrderSchema } from "@/lib/order-schemas";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
+import { createClient } from "@supabase/supabase-js";
+
+function getPublicServerClient() {
+  const url = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!url || !key) {
+    throw new Error("Server configuration error: orders client is not configured");
+  }
+
+  return createClient<Database>(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 function getBearerToken(request: Request) {
   const header = request.headers.get("authorization");
@@ -19,10 +32,11 @@ export const Route = createFileRoute("/api/orders")({
       POST: async ({ request }) => {
         try {
           const token = getBearerToken(request);
+          const supabase = getPublicServerClient();
           let userId = crypto.randomUUID() as Database["public"]["Tables"]["orders"]["Insert"]["user_id"];
 
           if (token) {
-            const { data: userData } = await supabaseAdmin.auth.getUser(token);
+            const { data: userData } = await supabase.auth.getUser(token);
             if (userData.user?.id) {
               userId = userData.user.id;
             }
@@ -38,7 +52,7 @@ export const Route = createFileRoute("/api/orders")({
           const subtotal = input.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
           const total = subtotal + input.deliveryFee;
 
-          const { data: order, error: orderError } = await supabaseAdmin
+          const { data: order, error: orderError } = await supabase
             .from("orders")
             .insert({
               user_id: userId,
@@ -68,7 +82,7 @@ export const Route = createFileRoute("/api/orders")({
             line_total: item.unitPrice * item.quantity,
           }));
 
-          const { error: itemsError } = await supabaseAdmin.from("order_items").insert(orderItems);
+          const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
           if (itemsError) {
             return Response.json({ error: "Pedido criado, mas itens não foram salvos" }, { status: 500 });
           }
@@ -83,7 +97,8 @@ export const Route = createFileRoute("/api/orders")({
               total: formatCurrency(total),
             },
           });
-        } catch {
+        } catch (error) {
+          console.error("Erro ao criar pedido", error);
           return Response.json({ error: "Erro interno ao criar pedido" }, { status: 500 });
         }
       },

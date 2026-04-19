@@ -33,6 +33,17 @@ export function CartSummarySection() {
     }
   };
 
+  const handleShareTracking = async () => {
+    if (!lastOrderId) return;
+    const trackingUrl = `${window.location.origin}/pedido/${lastOrderId}`;
+    try {
+      await navigator.clipboard.writeText(trackingUrl);
+      setFeedback("Link de rastreio copiado! Envie ao cliente no WhatsApp.");
+    } catch {
+      setFeedback("Não foi possível copiar automaticamente. Copie o link abaixo.");
+    }
+  };
+
   return (
     <SectionReveal className="brand-shell mt-20">
       <div className="glass-card p-7" id="carrinho">
@@ -138,9 +149,14 @@ export function CartSummarySection() {
             <div className="mt-3 space-y-2 text-sm font-medium text-foreground">
               <p>{feedback ?? `Último pedido: #${lastOrderId?.slice(0, 8)}`}</p>
               {lastOrderId && (
-                <a href={`/pedido/${lastOrderId}`} className="story-link text-primary">
-                  Abrir link de rastreio premium
-                </a>
+                <div className="flex flex-wrap items-center gap-3">
+                  <a href={`/pedido/${lastOrderId}`} className="story-link text-primary">
+                    Abrir link de rastreio premium
+                  </a>
+                  <button type="button" onClick={handleShareTracking} className="btn-soft px-3 py-2 text-xs">
+                    Compartilhar rastreio
+                  </button>
+                </div>
               )}
             </div>
           )}

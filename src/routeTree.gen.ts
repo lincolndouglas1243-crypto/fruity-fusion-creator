@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PedidoOrderIdRouteImport } from './routes/pedido.$orderId'
 import { Route as ApiOrdersRouteImport } from './routes/api.orders'
 import { Route as ApiOrdersMineRouteImport } from './routes/api.orders.mine'
 import { Route as ApiOrdersOrderIdRouteImport } from './routes/api.orders.$orderId'
@@ -27,6 +28,11 @@ const AdminRoute = AdminRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PedidoOrderIdRoute = PedidoOrderIdRouteImport.update({
+  id: '/pedido/$orderId',
+  path: '/pedido/$orderId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOrdersRoute = ApiOrdersRouteImport.update({
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
+  '/pedido/$orderId': typeof PedidoOrderIdRoute
   '/api/admin/dashboard': typeof ApiAdminDashboardRoute
   '/api/admin/products': typeof ApiAdminProductsRoute
   '/api/admin/promotions': typeof ApiAdminPromotionsRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
+  '/pedido/$orderId': typeof PedidoOrderIdRoute
   '/api/admin/dashboard': typeof ApiAdminDashboardRoute
   '/api/admin/products': typeof ApiAdminProductsRoute
   '/api/admin/promotions': typeof ApiAdminPromotionsRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
+  '/pedido/$orderId': typeof PedidoOrderIdRoute
   '/api/admin/dashboard': typeof ApiAdminDashboardRoute
   '/api/admin/products': typeof ApiAdminProductsRoute
   '/api/admin/promotions': typeof ApiAdminPromotionsRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/api/orders'
+    | '/pedido/$orderId'
     | '/api/admin/dashboard'
     | '/api/admin/products'
     | '/api/admin/promotions'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/api/orders'
+    | '/pedido/$orderId'
     | '/api/admin/dashboard'
     | '/api/admin/products'
     | '/api/admin/promotions'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/api/orders'
+    | '/pedido/$orderId'
     | '/api/admin/dashboard'
     | '/api/admin/products'
     | '/api/admin/promotions'
@@ -140,6 +152,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   ApiOrdersRoute: typeof ApiOrdersRouteWithChildren
+  PedidoOrderIdRoute: typeof PedidoOrderIdRoute
   ApiAdminDashboardRoute: typeof ApiAdminDashboardRoute
   ApiAdminProductsRoute: typeof ApiAdminProductsRoute
   ApiAdminPromotionsRoute: typeof ApiAdminPromotionsRoute
@@ -160,6 +173,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pedido/$orderId': {
+      id: '/pedido/$orderId'
+      path: '/pedido/$orderId'
+      fullPath: '/pedido/$orderId'
+      preLoaderRoute: typeof PedidoOrderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/orders': {
@@ -232,6 +252,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   ApiOrdersRoute: ApiOrdersRouteWithChildren,
+  PedidoOrderIdRoute: PedidoOrderIdRoute,
   ApiAdminDashboardRoute: ApiAdminDashboardRoute,
   ApiAdminProductsRoute: ApiAdminProductsRoute,
   ApiAdminPromotionsRoute: ApiAdminPromotionsRoute,

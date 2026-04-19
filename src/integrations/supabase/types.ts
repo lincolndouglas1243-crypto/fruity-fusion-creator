@@ -123,7 +123,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
-          courier_code: string
+          courier_code?: string
           courier_heading?: number | null
           courier_lat?: number | null
           courier_lng?: number | null

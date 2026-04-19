@@ -54,7 +54,7 @@ export const Route = createFileRoute("/api/orders")({
           const total = subtotal + input.deliveryFee;
           const trackingCode = `AP-${crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase()}`;
 
-          const { data: order, error: orderError } = await supabase
+          const { data: order, error: orderError } = await supabaseAdmin
             .from("orders")
             .insert({
               ...(userId ? { user_id: userId } : {}),
@@ -76,7 +76,10 @@ export const Route = createFileRoute("/api/orders")({
               route: "/api/orders",
               error_message: orderError?.message ?? "Falha desconhecida ao inserir pedido",
               error_context: orderError?.details ?? orderError?.hint ?? null,
-              request_payload: raw,
+              request_payload: {
+                hasToken: Boolean(token),
+                itemsCount: Array.isArray(input.items) ? input.items.length : 0,
+              },
             });
             return Response.json({ error: "Não foi possível criar o pedido" }, { status: 500 });
           }
@@ -91,13 +94,13 @@ export const Route = createFileRoute("/api/orders")({
             line_total: item.unitPrice * item.quantity,
           }));
 
-          const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
+          const { error: itemsError } = await supabaseAdmin.from("order_items").insert(orderItems);
           if (itemsError) {
             await supabaseAdmin.from("checkout_error_logs").insert({
               route: "/api/orders",
               error_message: itemsError.message,
               error_context: itemsError.details ?? itemsError.hint ?? null,
-              request_payload: { orderId: order.id, items: orderItems },
+              request_payload: { orderId: order.id, itemsCount: orderItems.length },
             });
             return Response.json({ error: "Pedido criado, mas itens não foram salvos" }, { status: 500 });
           }

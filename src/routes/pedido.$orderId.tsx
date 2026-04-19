@@ -81,6 +81,22 @@ function OrderTrackingPage() {
   }, [orderId]);
 
   useEffect(() => {
+    const timer = window.setInterval(async () => {
+      try {
+        const response = await fetch(`/api/orders/${orderId}`);
+        if (!response.ok) return;
+        const body = await response.json();
+        setOrder(body.order as OrderDetails);
+        setItems((body.items as OrderItem[]) ?? []);
+      } catch {
+        // mantém última versão em tela
+      }
+    }, 15000);
+
+    return () => window.clearInterval(timer);
+  }, [orderId]);
+
+  useEffect(() => {
     if (!order?.id) return;
 
     const channel = supabase

@@ -31,6 +31,7 @@ type PromotionRow = {
 type OrderRow = {
   id: string;
   tracking_code: string | null;
+  courier_code: string | null;
   customer_name: string;
   status: "pending" | "accepted" | "preparing" | "on_the_way" | "delivered" | "cancelled";
   total: number;
@@ -193,6 +194,21 @@ function AdminPage() {
       gpsWatchRef.current = null;
     }
     setGpsOrderId(null);
+  };
+
+  const copyCourierLink = async (order: OrderRow) => {
+    if (!order.courier_code) {
+      setMessage("Este pedido ainda não possui código de entrega.");
+      return;
+    }
+
+    const url = `${window.location.origin}/entrega/${order.courier_code}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setMessage(`Link do motoboy copiado para o pedido #${order.id.slice(0, 8)}.`);
+    } catch {
+      setMessage("Não foi possível copiar automaticamente o link do motoboy.");
+    }
   };
 
   const startGps = (order: OrderRow) => {
@@ -429,39 +445,12 @@ function AdminPage() {
                 <div>
                   <p className="font-bold text-foreground">#{order.id.slice(0, 8)} • {order.customer_name}</p>
                   <p className="text-xs font-medium text-muted-foreground">Código rastreio: {order.tracking_code ?? "—"}</p>
+                  <p className="text-xs font-medium text-muted-foreground">Código motoboy: {order.courier_code ?? "—"}</p>
                   <p className="text-sm text-muted-foreground">R$ {Number(order.total).toFixed(2)} • {new Date(order.created_at).toLocaleString("pt-BR")}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Última posição: {order.courier_updated_at ? new Date(order.courier_updated_at).toLocaleTimeString("pt-BR") : "sem atualização"}
                   </p>
                   <div className="mt-2 grid gap-2 md:grid-cols-2">
-                    <input
-                      type="number"
-                      step="0.000001"
-                      placeholder="Latitude do motoboy"
-                      value={order.courier_lat ?? ""}
-                      onChange={(event) =>
-                        setOrders((current) =>
-                          current.map((item) =>
-                            item.id === order.id ? { ...item, courier_lat: event.target.value === "" ? null : Number(event.target.value) } : item,
-                          ),
-                        )
-                      }
-                      className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
-                    />
-                    <input
-                      type="number"
-                      step="0.000001"
-                      placeholder="Longitude do motoboy"
-                      value={order.courier_lng ?? ""}
-                      onChange={(event) =>
-                        setOrders((current) =>
-                          current.map((item) =>
-                            item.id === order.id ? { ...item, courier_lng: event.target.value === "" ? null : Number(event.target.value) } : item,
-                          ),
-                        )
-                      }
-                      className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
-                    />
                     <input
                       type="number"
                       min={0}
@@ -510,6 +499,9 @@ function AdminPage() {
                   </select>
                   <button onClick={() => updateOrderStatus(order, order.status)} className="btn-soft px-4 py-2 text-xs">
                     Atualizar localização
+                  </button>
+                  <button onClick={() => copyCourierLink(order)} className="btn-soft px-4 py-2 text-xs">
+                    Copiar link do motoboy
                   </button>
                   {gpsOrderId === order.id ? (
                     <button onClick={stopGps} className="btn-soft px-4 py-2 text-xs">Parar GPS ao vivo</button>

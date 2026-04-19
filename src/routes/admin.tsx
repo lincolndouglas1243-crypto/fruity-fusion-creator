@@ -30,6 +30,7 @@ type PromotionRow = {
 
 type OrderRow = {
   id: string;
+  tracking_code: string | null;
   customer_name: string;
   status: "pending" | "accepted" | "preparing" | "on_the_way" | "delivered" | "cancelled";
   total: number;
@@ -39,6 +40,14 @@ type OrderRow = {
   courier_heading: number | null;
   courier_updated_at: string | null;
   estimated_minutes: number | null;
+};
+
+type CheckoutErrorLogRow = {
+  id: string;
+  route: string;
+  error_message: string;
+  error_context: string | null;
+  created_at: string;
 };
 
 const orderStatuses: Array<OrderRow["status"]> = ["pending", "accepted", "preparing", "on_the_way", "delivered", "cancelled"];
@@ -63,6 +72,7 @@ function AdminPage() {
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [promotions, setPromotions] = useState<PromotionRow[]>([]);
   const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [checkoutErrorLogs, setCheckoutErrorLogs] = useState<CheckoutErrorLogRow[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | OrderRow["status"]>("all");
   const [customerSearch, setCustomerSearch] = useState("");
   const [gpsOrderId, setGpsOrderId] = useState<string | null>(null);
@@ -128,6 +138,7 @@ function AdminPage() {
       setProducts(response.products ?? []);
       setPromotions(response.promotions ?? []);
       setOrders(response.orders ?? []);
+      setCheckoutErrorLogs(response.checkoutErrorLogs ?? []);
       setIsAuthenticated(true);
     } catch (error) {
       setIsAuthenticated(false);
@@ -251,6 +262,7 @@ function AdminPage() {
     setProducts([]);
     setPromotions([]);
     setOrders([]);
+    setCheckoutErrorLogs([]);
   };
 
   const saveProduct = async (row: ProductRow) => {
@@ -416,6 +428,7 @@ function AdminPage() {
               <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-start">
                 <div>
                   <p className="font-bold text-foreground">#{order.id.slice(0, 8)} • {order.customer_name}</p>
+                  <p className="text-xs font-medium text-muted-foreground">Código rastreio: {order.tracking_code ?? "—"}</p>
                   <p className="text-sm text-muted-foreground">R$ {Number(order.total).toFixed(2)} • {new Date(order.created_at).toLocaleString("pt-BR")}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Última posição: {order.courier_updated_at ? new Date(order.courier_updated_at).toLocaleTimeString("pt-BR") : "sem atualização"}
@@ -508,6 +521,20 @@ function AdminPage() {
             </article>
           ))}
           {!filteredOrders.length && <p className="text-sm text-muted-foreground">Nenhum pedido encontrado com os filtros atuais.</p>}
+        </div>
+      </section>
+
+      <section className="glass-card mb-6 p-5">
+        <h2 className="mb-3 text-xl font-bold text-foreground">Falhas recentes do checkout</h2>
+        <div className="grid gap-3">
+          {checkoutErrorLogs.map((log) => (
+            <article key={log.id} className="rounded-2xl border border-border bg-card p-4">
+              <p className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString("pt-BR")} • {log.route}</p>
+              <p className="mt-1 font-semibold text-foreground">{log.error_message}</p>
+              {log.error_context && <p className="mt-1 text-xs text-muted-foreground">{log.error_context}</p>}
+            </article>
+          ))}
+          {!checkoutErrorLogs.length && <p className="text-sm text-muted-foreground">Sem falhas registradas no checkout.</p>}
         </div>
       </section>
 

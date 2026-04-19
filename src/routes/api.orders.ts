@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createOrderSchema } from "@/lib/order-schemas";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
 import { createClient } from "@supabase/supabase-js";
 
@@ -71,7 +72,7 @@ export const Route = createFileRoute("/api/orders")({
             .single();
 
           if (orderError || !order) {
-            await supabase.from("checkout_error_logs").insert({
+            await supabaseAdmin.from("checkout_error_logs").insert({
               route: "/api/orders",
               error_message: orderError?.message ?? "Falha desconhecida ao inserir pedido",
               error_context: orderError?.details ?? orderError?.hint ?? null,
@@ -92,7 +93,7 @@ export const Route = createFileRoute("/api/orders")({
 
           const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
           if (itemsError) {
-            await supabase.from("checkout_error_logs").insert({
+            await supabaseAdmin.from("checkout_error_logs").insert({
               route: "/api/orders",
               error_message: itemsError.message,
               error_context: itemsError.details ?? itemsError.hint ?? null,
@@ -116,7 +117,7 @@ export const Route = createFileRoute("/api/orders")({
           console.error("Erro ao criar pedido", error);
           try {
             const supabase = getPublicServerClient();
-            await supabase.from("checkout_error_logs").insert({
+            await supabaseAdmin.from("checkout_error_logs").insert({
               route: "/api/orders",
               error_message: error instanceof Error ? error.message : "Erro interno inesperado",
               error_context: error instanceof Error ? error.stack?.slice(0, 800) : null,

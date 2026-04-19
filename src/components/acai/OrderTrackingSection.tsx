@@ -63,7 +63,12 @@ export function OrderTrackingSection() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/orders/${id.trim()}`);
+      const trackingLookup = id.trim();
+      const response = await fetch(`/api/orders/${trackingLookup}`, {
+        headers: {
+          "x-tracking-code": trackingLookup,
+        },
+      });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result?.error || "Não foi possível carregar o pedido.");
       setActiveOrder(result.order as OrderDetails);

@@ -33,7 +33,7 @@ export const Route = createFileRoute("/api/orders")({
         try {
           const token = getBearerToken(request);
           const supabase = getPublicServerClient();
-          let userId = crypto.randomUUID() as Database["public"]["Tables"]["orders"]["Insert"]["user_id"];
+          let userId: string | null = null;
 
           if (token) {
             const { data: userData } = await supabase.auth.getUser(token);
@@ -51,11 +51,13 @@ export const Route = createFileRoute("/api/orders")({
           const input = parsed.data;
           const subtotal = input.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
           const total = subtotal + input.deliveryFee;
+          const trackingCode = `AP-${crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase()}`;
 
           const { data: order, error: orderError } = await supabase
             .from("orders")
             .insert({
-              user_id: userId,
+              ...(userId ? { user_id: userId } : {}),
+              tracking_code: trackingCode,
               status: "pending",
               customer_name: input.customerName,
               customer_phone: input.customerPhone,
@@ -64,11 +66,17 @@ export const Route = createFileRoute("/api/orders")({
               subtotal,
               delivery_fee: input.deliveryFee,
               total,
-            })
-            .select("id, status, total")
+            } as Database["public"]["Tables"]["orders"]["Insert"])
+            .select("id, tracking_code, status, total")
             .single();
 
           if (orderError || !order) {
+            await supabase.from("checkout_error_logs").insert({
+              route: "/api/orders",
+              error_message: orderError?.message ?? "Falha desconhecida ao inserir pedido",
+              error_context: orderError?.details ?? orderError?.hint ?? null,
+              request_payload: raw,
+            });
             return Response.json({ error: "Não foi possível criar o pedido" }, { status: 500 });
           }
 
@@ -84,11 +92,18 @@ export const Route = createFileRoute("/api/orders")({
 
           const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
           if (itemsError) {
+            await supabase.from("checkout_error_logs").insert({
+              route: "/api/orders",
+              error_message: itemsError.message,
+              error_context: itemsError.details ?? itemsError.hint ?? null,
+              request_payload: { orderId: order.id, items: orderItems },
+            });
             return Response.json({ error: "Pedido criado, mas itens não foram salvos" }, { status: 500 });
           }
 
           return Response.json({
             orderId: order.id,
+            trackingCode: order.tracking_code,
             status: order.status,
             total: order.total,
             summary: {
@@ -99,6 +114,17 @@ export const Route = createFileRoute("/api/orders")({
           });
         } catch (error) {
           console.error("Erro ao criar pedido", error);
+          try {
+            const supabase = getPublicServerClient();
+            await supabase.from("checkout_error_logs").insert({
+              route: "/api/orders",
+              error_message: error instanceof Error ? error.message : "Erro interno inesperado",
+              error_context: error instanceof Error ? error.stack?.slice(0, 800) : null,
+              request_payload: null,
+            });
+          } catch {
+            // ignore logging failure
+          }
           return Response.json({ error: "Erro interno ao criar pedido" }, { status: 500 });
         }
       },

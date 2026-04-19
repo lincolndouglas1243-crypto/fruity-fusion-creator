@@ -28,10 +28,17 @@ export const Route = createFileRoute("/api/orders/$orderId")({
     handlers: {
       GET: async ({ request, params }) => {
         const token = getBearerToken(request);
+        const lookup = params.orderId.trim();
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(lookup);
+
+        const orderQuery = supabaseAdmin
+          .from("orders")
+          .select("id, tracking_code, user_id, status, total, created_at, courier_lat, courier_lng, courier_updated_at, estimated_minutes");
+
         const { data: order } = await supabaseAdmin
           .from("orders")
-          .select("id, user_id, status, total, created_at, courier_lat, courier_lng, courier_updated_at, estimated_minutes")
-          .eq("id", params.orderId)
+          .select("id, tracking_code, user_id, status, total, created_at, courier_lat, courier_lng, courier_updated_at, estimated_minutes")
+          .eq(isUuid ? "id" : "tracking_code", lookup)
           .maybeSingle();
         if (!order) return Response.json({ error: "Pedido não encontrado" }, { status: 404 });
 
@@ -48,7 +55,7 @@ export const Route = createFileRoute("/api/orders/$orderId")({
               .maybeSingle();
 
             const isAdmin = Boolean(roleData?.role === "admin");
-            if (!isAdmin && order.user_id !== userData.user.id) {
+            if (!isAdmin && order.user_id && order.user_id !== userData.user.id) {
               return Response.json({ error: "Sem permissão" }, { status: 403 });
             }
           }

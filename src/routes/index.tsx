@@ -8,6 +8,7 @@ import { FooterSection } from "@/components/acai/FooterSection";
 import { HeroSection } from "@/components/acai/HeroSection";
 import { MenuSection } from "@/components/acai/MenuSection";
 import { Navbar } from "@/components/acai/Navbar";
+import { OrderTrackingSection } from "@/components/acai/OrderTrackingSection";
 import { PromotionsSection } from "@/components/acai/PromotionsSection";
 import { StatsStrip } from "@/components/acai/StatsStrip";
 import { TestimonialsSection } from "@/components/acai/TestimonialsSection";
@@ -44,6 +45,7 @@ function Index() {
         <MenuSection />
         <BuildYourOwnSection />
         <CartSummarySection />
+        <OrderTrackingSection />
         <PromotionsSection />
         <TestimonialsSection />
         <AboutContactSection />

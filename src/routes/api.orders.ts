@@ -79,30 +79,15 @@ export const Route = createFileRoute("/api/orders")({
             return Response.json({ error: "Pedido criado, mas itens não foram salvos" }, { status: 500 });
           }
 
-          const lines = input.items.map(
-            (item, i) =>
-              `${i + 1}. ${item.quantity}x ${item.name}${item.size ? ` | ${item.size}` : ""}\n   Adicionais: ${item.toppings.length ? item.toppings.join(", ") : "Sem"}\n   Valor: ${formatCurrency(item.unitPrice * item.quantity)}`,
-          );
-
-          const message = [
-            `Olá! Pedido #${order.id.slice(0, 8)} criado no site.`,
-            "",
-            ...lines,
-            "",
-            `Subtotal: ${formatCurrency(subtotal)}`,
-            `Entrega: ${formatCurrency(input.deliveryFee)}`,
-            `Total: ${formatCurrency(total)}`,
-            "",
-            `Endereço: ${input.deliveryAddress}`,
-          ].join("\n");
-
-          await supabaseAdmin.from("orders").update({ whatsapp_message: message }).eq("id", order.id);
-
           return Response.json({
             orderId: order.id,
             status: order.status,
             total: order.total,
-            whatsappUrl: `https://wa.me/5500000000000?text=${encodeURIComponent(message)}`,
+            summary: {
+              subtotal: formatCurrency(subtotal),
+              deliveryFee: formatCurrency(input.deliveryFee),
+              total: formatCurrency(total),
+            },
           });
         } catch {
           return Response.json({ error: "Erro interno ao criar pedido" }, { status: 500 });

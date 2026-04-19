@@ -1,7 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { Database } from "@/integrations/supabase/types";
 import { createClient } from "@supabase/supabase-js";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+function getPublicServerClient() {
+  const url = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) throw new Error("Server configuration error: orders client is not configured");
+  return createClient<Database>(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 function getServerClient(token: string) {
   const url = import.meta.env.VITE_SUPABASE_URL;
@@ -28,19 +36,23 @@ export const Route = createFileRoute("/api/orders/$orderId")({
     handlers: {
       GET: async ({ request, params }) => {
         const token = getBearerToken(request);
-        const { data: order } = await supabaseAdmin
+        const supabase = getPublicServerClient();
+        const lookup = params.orderId.trim();
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(lookup);
+
+        const { data: order } = await supabase
           .from("orders")
-          .select("id, user_id, status, total, created_at, courier_lat, courier_lng, courier_updated_at, estimated_minutes")
-          .eq("id", params.orderId)
+          .select("id, tracking_code, user_id, status, total, created_at, courier_lat, courier_lng, courier_updated_at, estimated_minutes")
+          .eq(isUuid ? "id" : "tracking_code", lookup)
           .maybeSingle();
         if (!order) return Response.json({ error: "Pedido não encontrado" }, { status: 404 });
 
         if (token) {
-          const supabase = getServerClient(token);
-          const { data: userData } = await supabase.auth.getUser(token);
+          const authedClient = getServerClient(token);
+          const { data: userData } = await authedClient.auth.getUser(token);
 
           if (userData.user) {
-            const { data: roleData } = await supabase
+            const { data: roleData } = await authedClient
               .from("user_roles")
               .select("role")
               .eq("user_id", userData.user.id)
@@ -48,13 +60,13 @@ export const Route = createFileRoute("/api/orders/$orderId")({
               .maybeSingle();
 
             const isAdmin = Boolean(roleData?.role === "admin");
-            if (!isAdmin && order.user_id !== userData.user.id) {
+            if (!isAdmin && order.user_id && order.user_id !== userData.user.id) {
               return Response.json({ error: "Sem permissão" }, { status: 403 });
             }
           }
         }
 
-        const { data: items } = await supabaseAdmin
+        const { data: items } = await supabase
           .from("order_items")
           .select("id, product_name, quantity, selected_size, selected_toppings, line_total")
           .eq("order_id", order.id)

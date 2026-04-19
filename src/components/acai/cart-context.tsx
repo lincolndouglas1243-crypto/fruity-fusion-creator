@@ -28,6 +28,7 @@ type CartContextValue = {
   }) => Promise<{ orderId: string; status: string; total: number }>;
   isSubmitting: boolean;
   lastOrderId: string | null;
+  lastTrackingCode: string | null;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -56,6 +57,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+  const [lastTrackingCode, setLastTrackingCode] = useState<string | null>(null);
 
   const itemCount = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
   const total = useMemo(() => items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0), [items]);
@@ -66,6 +68,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     total,
     isSubmitting,
     lastOrderId,
+    lastTrackingCode,
     addPresetItem: ({ name, price }) => {
       const item: CartItem = {
         id: crypto.randomUUID(),
@@ -136,6 +139,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
 
         setLastOrderId(body.orderId ?? null);
+        setLastTrackingCode(body.trackingCode ?? null);
         setItems([]);
         return {
           orderId: body.orderId,

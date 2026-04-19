@@ -7,6 +7,7 @@ const links = [
   { href: "#promocoes", label: "Promoções" },
   { href: "#avaliacoes", label: "Avaliações" },
   { href: "#contato", label: "Contato" },
+  { href: "/admin", label: "Admin" },
 ];
 
 export function Navbar() {

@@ -71,12 +71,17 @@ export type Database = {
       orders: {
         Row: {
           accepted_at: string | null
+          courier_heading: number | null
+          courier_lat: number | null
+          courier_lng: number | null
+          courier_updated_at: string | null
           created_at: string
           customer_name: string
           customer_phone: string
           delivered_at: string | null
           delivery_address: string
           delivery_fee: number
+          estimated_minutes: number | null
           id: string
           notes: string | null
           on_the_way_at: string | null
@@ -89,12 +94,17 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          courier_heading?: number | null
+          courier_lat?: number | null
+          courier_lng?: number | null
+          courier_updated_at?: string | null
           created_at?: string
           customer_name: string
           customer_phone: string
           delivered_at?: string | null
           delivery_address: string
           delivery_fee?: number
+          estimated_minutes?: number | null
           id?: string
           notes?: string | null
           on_the_way_at?: string | null
@@ -107,12 +117,17 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          courier_heading?: number | null
+          courier_lat?: number | null
+          courier_lng?: number | null
+          courier_updated_at?: string | null
           created_at?: string
           customer_name?: string
           customer_phone?: string
           delivered_at?: string | null
           delivery_address?: string
           delivery_fee?: number
+          estimated_minutes?: number | null
           id?: string
           notes?: string | null
           on_the_way_at?: string | null

@@ -34,6 +34,11 @@ type OrderRow = {
   status: "pending" | "accepted" | "preparing" | "on_the_way" | "delivered" | "cancelled";
   total: number;
   created_at: string;
+  courier_lat: number | null;
+  courier_lng: number | null;
+  courier_heading: number | null;
+  courier_updated_at: string | null;
+  estimated_minutes: number | null;
 };
 
 const orderStatuses: Array<OrderRow["status"]> = ["pending", "accepted", "preparing", "on_the_way", "delivered", "cancelled"];
@@ -159,14 +164,20 @@ function AdminPage() {
     }
   };
 
-  const updateOrderStatus = async (orderId: string, status: OrderRow["status"]) => {
+  const updateOrderStatus = async (order: OrderRow, status: OrderRow["status"]) => {
     setMessage(null);
     try {
-      await authFetch(`/api/admin/orders/${orderId}/status`, {
+      await authFetch(`/api/admin/orders/${order.id}/status`, {
         method: "PATCH",
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({
+          status,
+          courierLat: order.courier_lat,
+          courierLng: order.courier_lng,
+          courierHeading: order.courier_heading,
+          estimatedMinutes: order.estimated_minutes,
+        }),
       });
-      setMessage(`Pedido #${orderId.slice(0, 8)} atualizado para ${status}.`);
+      setMessage(`Pedido #${order.id.slice(0, 8)} atualizado para ${status}.`);
       await loadDashboard();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha ao atualizar pedido.");
@@ -225,20 +236,88 @@ function AdminPage() {
         <div className="grid gap-3">
           {orders.map((order) => (
             <article key={order.id} className="rounded-2xl border border-border bg-card p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-start">
                 <div>
                   <p className="font-bold text-foreground">#{order.id.slice(0, 8)} • {order.customer_name}</p>
                   <p className="text-sm text-muted-foreground">R$ {Number(order.total).toFixed(2)} • {new Date(order.created_at).toLocaleString("pt-BR")}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Última posição: {order.courier_updated_at ? new Date(order.courier_updated_at).toLocaleTimeString("pt-BR") : "sem atualização"}
+                  </p>
+                  <div className="mt-2 grid gap-2 md:grid-cols-2">
+                    <input
+                      type="number"
+                      step="0.000001"
+                      placeholder="Latitude do motoboy"
+                      value={order.courier_lat ?? ""}
+                      onChange={(event) =>
+                        setOrders((current) =>
+                          current.map((item) =>
+                            item.id === order.id ? { ...item, courier_lat: event.target.value === "" ? null : Number(event.target.value) } : item,
+                          ),
+                        )
+                      }
+                      className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
+                    />
+                    <input
+                      type="number"
+                      step="0.000001"
+                      placeholder="Longitude do motoboy"
+                      value={order.courier_lng ?? ""}
+                      onChange={(event) =>
+                        setOrders((current) =>
+                          current.map((item) =>
+                            item.id === order.id ? { ...item, courier_lng: event.target.value === "" ? null : Number(event.target.value) } : item,
+                          ),
+                        )
+                      }
+                      className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      max={360}
+                      placeholder="Heading (0-360)"
+                      value={order.courier_heading ?? ""}
+                      onChange={(event) =>
+                        setOrders((current) =>
+                          current.map((item) =>
+                            item.id === order.id ? { ...item, courier_heading: event.target.value === "" ? null : Number(event.target.value) } : item,
+                          ),
+                        )
+                      }
+                      className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      max={240}
+                      placeholder="Previsão (min)"
+                      value={order.estimated_minutes ?? ""}
+                      onChange={(event) =>
+                        setOrders((current) =>
+                          current.map((item) =>
+                            item.id === order.id ? { ...item, estimated_minutes: event.target.value === "" ? null : Number(event.target.value) } : item,
+                          ),
+                        )
+                      }
+                      className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
+                    />
+                  </div>
                 </div>
-                <select
-                  value={order.status}
-                  onChange={(event) => updateOrderStatus(order.id, event.target.value as OrderRow["status"])}
-                  className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
-                >
-                  {orderStatuses.map((status) => (
-                    <option key={status} value={status}>{status}</option>
-                  ))}
-                </select>
+                <div className="grid gap-2">
+                  <select
+                    value={order.status}
+                    onChange={(event) => updateOrderStatus(order, event.target.value as OrderRow["status"])}
+                    className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
+                  >
+                    {orderStatuses.map((status) => (
+                      <option key={status} value={status}>{status}</option>
+                    ))}
+                  </select>
+                  <button onClick={() => updateOrderStatus(order, order.status)} className="btn-soft px-4 py-2 text-xs">
+                    Atualizar localização
+                  </button>
+                </div>
               </div>
             </article>
           ))}

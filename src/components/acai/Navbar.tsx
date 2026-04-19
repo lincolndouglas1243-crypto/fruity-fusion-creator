@@ -5,6 +5,7 @@ const links = [
   { href: "#cardapio", label: "Cardápio" },
   { href: "#monte", label: "Monte o Seu" },
   { href: "#promocoes", label: "Promoções" },
+  { href: "#acompanhar", label: "Acompanhar" },
   { href: "#avaliacoes", label: "Avaliações" },
   { href: "#contato", label: "Contato" },
   { href: "/admin", label: "Admin" },

@@ -4,8 +4,8 @@ import { createOrderSchema } from "@/lib/order-schemas";
 import type { Database } from "@/integrations/supabase/types";
 
 function getAdminClient() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) throw new Error("Supabase server env not configured");
   return createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },

@@ -18,6 +18,19 @@ export const Route = createFileRoute("/api/admin/orders/$orderId/status")({
           status: parsed.data.status,
         };
 
+        if (parsed.data.courierLat !== undefined) updates.courier_lat = parsed.data.courierLat;
+        if (parsed.data.courierLng !== undefined) updates.courier_lng = parsed.data.courierLng;
+        if (parsed.data.courierHeading !== undefined) updates.courier_heading = parsed.data.courierHeading;
+        if (parsed.data.estimatedMinutes !== undefined) updates.estimated_minutes = parsed.data.estimatedMinutes;
+        if (
+          parsed.data.courierLat !== undefined ||
+          parsed.data.courierLng !== undefined ||
+          parsed.data.courierHeading !== undefined ||
+          parsed.data.estimatedMinutes !== undefined
+        ) {
+          updates.courier_updated_at = new Date().toISOString();
+        }
+
         if (parsed.data.status === "accepted") updates.accepted_at = new Date().toISOString();
         if (parsed.data.status === "on_the_way") updates.on_the_way_at = new Date().toISOString();
         if (parsed.data.status === "delivered") updates.delivered_at = new Date().toISOString();

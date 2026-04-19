@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { Database } from "@/integrations/supabase/types";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createClient } from "@supabase/supabase-js";
 
 function getPublicServerClient(trackingCode?: string) {
@@ -70,16 +71,32 @@ export const Route = createFileRoute("/api/orders/$orderId")({
           supabase = authedClient;
         }
 
+        if (!token) {
+          const { data: trackedOrder } = await supabaseAdmin
+            .from("orders")
+            .select("id, tracking_code, status, total, created_at, courier_lat, courier_lng, courier_heading, courier_updated_at, estimated_minutes")
+            .eq("tracking_code", lookup)
+            .maybeSingle();
+
+          if (!trackedOrder) return Response.json({ error: "Pedido não encontrado" }, { status: 404 });
+
+          const { data: trackedItems } = await supabaseAdmin
+            .from("order_items")
+            .select("id, product_name, quantity, selected_size, selected_toppings, line_total")
+            .eq("order_id", trackedOrder.id)
+            .order("created_at", { ascending: true });
+
+          return Response.json({ order: trackedOrder, items: trackedItems ?? [] });
+        }
+
         const { data: order } = await supabase
           .from("orders")
           .select("id, tracking_code, user_id, status, total, created_at, courier_lat, courier_lng, courier_heading, courier_updated_at, estimated_minutes")
           .eq(isUuid ? "id" : "tracking_code", lookup)
           .maybeSingle();
-        if (!order) return Response.json({ error: "Pedido não encontrado" }, { status: 404 });
 
-        if (token && !isAdmin && order.user_id && order.user_id !== userId) {
-          return Response.json({ error: "Sem permissão" }, { status: 403 });
-        }
+        if (!order) return Response.json({ error: "Pedido não encontrado" }, { status: 404 });
+        if (!isAdmin && order.user_id && order.user_id !== userId) return Response.json({ error: "Sem permissão" }, { status: 403 });
 
         const { data: items } = await supabase
           .from("order_items")
@@ -87,7 +104,21 @@ export const Route = createFileRoute("/api/orders/$orderId")({
           .eq("order_id", order.id)
           .order("created_at", { ascending: true });
 
-        return Response.json({ order, items: items ?? [] });
+        return Response.json({
+          order: {
+            id: order.id,
+            tracking_code: order.tracking_code,
+            status: order.status,
+            total: order.total,
+            created_at: order.created_at,
+            courier_lat: order.courier_lat,
+            courier_lng: order.courier_lng,
+            courier_heading: order.courier_heading,
+            courier_updated_at: order.courier_updated_at,
+            estimated_minutes: order.estimated_minutes,
+          },
+          items: items ?? [],
+        });
       },
     },
   },

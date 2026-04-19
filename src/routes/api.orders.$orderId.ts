@@ -1,12 +1,17 @@
-import { createClient } from "@supabase/supabase-js";
 import { createFileRoute } from "@tanstack/react-router";
 import type { Database } from "@/integrations/supabase/types";
+import { createClient } from "@supabase/supabase-js";
 
-function getAdminClient() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Supabase server env not configured");
+function getServerClient(token: string) {
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) throw new Error("Server configuration error: orders client is not configured");
   return createClient<Database>(url, key, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
@@ -24,18 +29,18 @@ export const Route = createFileRoute("/api/orders/$orderId")({
         const token = getBearerToken(request);
         if (!token) return Response.json({ error: "Não autorizado" }, { status: 401 });
 
-        const supabaseAdmin = getAdminClient();
-        const { data: userData } = await supabaseAdmin.auth.getUser(token);
+        const supabase = getServerClient(token);
+        const { data: userData } = await supabase.auth.getUser(token);
         if (!userData.user) return Response.json({ error: "Sessão inválida" }, { status: 401 });
 
-        const { data: roleData } = await supabaseAdmin
+        const { data: roleData } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", userData.user.id)
           .eq("role", "admin")
           .maybeSingle();
 
-        const { data: order } = await supabaseAdmin.from("orders").select("*").eq("id", params.orderId).maybeSingle();
+        const { data: order } = await supabase.from("orders").select("*").eq("id", params.orderId).maybeSingle();
         if (!order) return Response.json({ error: "Pedido não encontrado" }, { status: 404 });
 
         const isAdmin = Boolean(roleData?.role === "admin");
@@ -43,7 +48,7 @@ export const Route = createFileRoute("/api/orders/$orderId")({
           return Response.json({ error: "Sem permissão" }, { status: 403 });
         }
 
-        const { data: items } = await supabaseAdmin
+        const { data: items } = await supabase
           .from("order_items")
           .select("id, product_name, quantity, selected_size, selected_toppings, line_total")
           .eq("order_id", order.id)

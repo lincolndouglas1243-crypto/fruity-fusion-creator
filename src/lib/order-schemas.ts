@@ -19,6 +19,10 @@ export const createOrderSchema = z.object({
 
 export const updateOrderStatusSchema = z.object({
   status: z.enum(["pending", "accepted", "preparing", "on_the_way", "delivered", "cancelled"]),
+  courierLat: z.number().min(-90).max(90).nullable().optional(),
+  courierLng: z.number().min(-180).max(180).nullable().optional(),
+  courierHeading: z.number().min(0).max(360).nullable().optional(),
+  estimatedMinutes: z.number().int().min(0).max(240).nullable().optional(),
 });
 
 export const productSchema = z.object({

@@ -14,11 +14,20 @@ const links = [
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const closeOnResize = () => {
+      if (window.innerWidth >= 768) setMobileMenuOpen(false);
+    };
+    window.addEventListener("resize", closeOnResize);
+    return () => window.removeEventListener("resize", closeOnResize);
   }, []);
 
   return (
@@ -41,6 +50,7 @@ export function Navbar() {
               <img src={acaiLogo} alt="Logo Açaí dos Amigos" className="h-10 w-10 rounded-md object-cover" />
               Açaí dos Amigos
             </a>
+
             <div className="hidden items-center gap-5 md:flex">
               {links.map((link) => (
                 <a key={link.href} href={link.href} className="story-link text-sm font-semibold text-foreground">
@@ -48,10 +58,38 @@ export function Navbar() {
                 </a>
               ))}
             </div>
-            <a href="#pedido" className="btn-hero">
+
+            <a href="#pedido" className="btn-hero hidden md:inline-flex">
               Pedir
             </a>
+
+            <button
+              type="button"
+              aria-label="Abrir menu"
+              onClick={() => setMobileMenuOpen((current) => !current)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-foreground md:hidden"
+            >
+              ⋯
+            </button>
           </div>
+
+          {mobileMenuOpen && (
+            <div className="mt-3 grid gap-2 rounded-xl border border-border bg-card p-3 md:hidden">
+              {links.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-lg px-3 py-2 text-sm font-semibold text-foreground hover:bg-secondary/60"
+                >
+                  {link.label}
+                </a>
+              ))}
+              <a href="#pedido" onClick={() => setMobileMenuOpen(false)} className="btn-hero w-full">
+                Pedir
+              </a>
+            </div>
+          )}
         </nav>
       </div>
     </motion.header>

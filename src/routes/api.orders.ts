@@ -4,6 +4,14 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
 import { createClient } from "@supabase/supabase-js";
 
+const customSizePrices: Record<string, number> = {
+  "300ml": 19.9,
+  "500ml": 26.9,
+  "700ml": 34.9,
+};
+
+const customToppingPrice = 3;
+
 function getPublicServerClient() {
   const url = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
   const key = process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -50,7 +58,46 @@ export const Route = createFileRoute("/api/orders")({
           }
 
           const input = parsed.data;
-          const subtotal = input.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+          const normalizedItemNames = [...new Set(input.items.map((item) => item.name.trim()))];
+          const { data: productsData } = await supabaseAdmin
+            .from("products")
+            .select("name, price, offer_price, is_offer_day")
+            .in("name", normalizedItemNames)
+            .eq("is_active", true);
+
+          const productPriceMap = new Map<string, number>();
+          for (const product of productsData ?? []) {
+            const trustedPrice = product.is_offer_day && product.offer_price !== null ? Number(product.offer_price) : Number(product.price);
+            productPriceMap.set(product.name.trim(), trustedPrice);
+          }
+
+          const pricedItems = input.items.map((item) => {
+            const trimmedName = item.name.trim();
+
+            if (trimmedName === "Açaí Personalizado") {
+              if (!item.size || !(item.size in customSizePrices)) {
+                throw new Error("Tamanho inválido para açaí personalizado.");
+              }
+
+              const serverPrice = Number((customSizePrices[item.size] + item.toppings.length * customToppingPrice).toFixed(2));
+              return {
+                ...item,
+                trustedUnitPrice: serverPrice,
+              };
+            }
+
+            const trustedPrice = productPriceMap.get(trimmedName);
+            if (typeof trustedPrice !== "number") {
+              throw new Error(`Produto inválido ou inativo: ${trimmedName}`);
+            }
+
+            return {
+              ...item,
+              trustedUnitPrice: Number(trustedPrice.toFixed(2)),
+            };
+          });
+
+          const subtotal = pricedItems.reduce((sum, item) => sum + item.trustedUnitPrice * item.quantity, 0);
           const total = subtotal + input.deliveryFee;
           const trackingCode = `AP-${crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase()}`;
 
@@ -84,14 +131,14 @@ export const Route = createFileRoute("/api/orders")({
             return Response.json({ error: "Não foi possível criar o pedido" }, { status: 500 });
           }
 
-          const orderItems = input.items.map((item) => ({
+          const orderItems = pricedItems.map((item) => ({
             order_id: order.id,
             product_name: item.name,
-            unit_price: item.unitPrice,
+            unit_price: item.trustedUnitPrice,
             quantity: item.quantity,
             selected_size: item.size ?? null,
             selected_toppings: item.toppings,
-            line_total: item.unitPrice * item.quantity,
+            line_total: item.trustedUnitPrice * item.quantity,
           }));
 
           const { error: itemsError } = await supabaseAdmin.from("order_items").insert(orderItems);
@@ -119,7 +166,6 @@ export const Route = createFileRoute("/api/orders")({
         } catch (error) {
           console.error("Erro ao criar pedido", error);
           try {
-            const supabase = getPublicServerClient();
             await supabaseAdmin.from("checkout_error_logs").insert({
               route: "/api/orders",
               error_message: error instanceof Error ? error.message : "Erro interno inesperado",

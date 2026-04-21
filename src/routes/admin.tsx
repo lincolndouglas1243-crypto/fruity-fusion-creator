@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { authFetch } from "@/lib/api-client";
 
@@ -53,6 +53,15 @@ type CheckoutErrorLogRow = {
 
 const orderStatuses: Array<OrderRow["status"]> = ["pending", "accepted", "preparing", "on_the_way", "delivered", "cancelled"];
 
+const statusPt: Record<OrderRow["status"], string> = {
+  pending: "Pendente",
+  accepted: "Aceito",
+  preparing: "Preparando",
+  on_the_way: "A caminho",
+  delivered: "Entregue",
+  cancelled: "Cancelado",
+};
+
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
@@ -76,8 +85,6 @@ function AdminPage() {
   const [checkoutErrorLogs, setCheckoutErrorLogs] = useState<CheckoutErrorLogRow[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | OrderRow["status"]>("all");
   const [customerSearch, setCustomerSearch] = useState("");
-  const [gpsOrderId, setGpsOrderId] = useState<string | null>(null);
-  const gpsWatchRef = useRef<number | null>(null);
 
   const playAdminAlert = () => {
     try {
@@ -121,6 +128,16 @@ function AdminPage() {
     });
   }, [orders, statusFilter, customerSearch]);
 
+  const activeOrders = useMemo(
+    () => filteredOrders.filter((item) => item.status !== "delivered"),
+    [filteredOrders],
+  );
+
+  const orderHistory = useMemo(
+    () => filteredOrders.filter((item) => item.status === "delivered"),
+    [filteredOrders],
+  );
+
   const totals = useMemo(() => {
     const revenue = orders.reduce((sum, item) => sum + Number(item.total || 0), 0);
     return {
@@ -159,6 +176,15 @@ function AdminPage() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
+    const poll = window.setInterval(() => {
+      loadDashboard();
+    }, 5000);
+
+    return () => window.clearInterval(poll);
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
     const channel = supabase
       .channel("admin-orders-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
@@ -175,7 +201,7 @@ function AdminPage() {
           if (previous.status && next.status && previous.status !== next.status) {
             const shortId = next.id?.slice(0, 8) ?? "pedido";
             playAdminAlert();
-            notifyAdmin("Pedido mudou de status", `#${shortId}: ${previous.status} → ${next.status}`);
+            notifyAdmin("Pedido mudou de status", `#${shortId}: ${statusPt[previous.status]} → ${statusPt[next.status]}`);
           }
         }
 
@@ -187,14 +213,6 @@ function AdminPage() {
       supabase.removeChannel(channel);
     };
   }, [isAuthenticated]);
-
-  const stopGps = () => {
-    if (gpsWatchRef.current !== null) {
-      navigator.geolocation.clearWatch(gpsWatchRef.current);
-      gpsWatchRef.current = null;
-    }
-    setGpsOrderId(null);
-  };
 
   const copyCourierLink = async (order: OrderRow) => {
     if (!order.courier_code) {
@@ -211,53 +229,6 @@ function AdminPage() {
     }
   };
 
-  const startGps = (order: OrderRow) => {
-    if (!navigator.geolocation) {
-      setMessage("GPS não disponível neste dispositivo.");
-      return;
-    }
-
-    stopGps();
-    setGpsOrderId(order.id);
-
-    const watchId = navigator.geolocation.watchPosition(
-      async (position) => {
-        const lat = Number(position.coords.latitude.toFixed(6));
-        const lng = Number(position.coords.longitude.toFixed(6));
-        const heading = position.coords.heading !== null ? Number(position.coords.heading.toFixed(2)) : null;
-
-        setOrders((current) =>
-          current.map((item) =>
-            item.id === order.id
-              ? {
-                  ...item,
-                  courier_lat: lat,
-                  courier_lng: lng,
-                  courier_heading: heading,
-                  courier_updated_at: new Date().toISOString(),
-                }
-              : item,
-          ),
-        );
-
-        await authFetch(`/api/admin/orders/${order.id}/status`, {
-          method: "PATCH",
-          body: JSON.stringify({
-            status: order.status,
-            courierLat: lat,
-            courierLng: lng,
-            courierHeading: heading,
-            estimatedMinutes: order.estimated_minutes,
-          }),
-        }).catch(() => null);
-      },
-      () => setMessage("Não foi possível acessar a localização do celular."),
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 },
-    );
-
-    gpsWatchRef.current = watchId;
-  };
-
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     setMessage(null);
@@ -272,7 +243,6 @@ function AdminPage() {
   };
 
   const handleLogout = async () => {
-    stopGps();
     await supabase.auth.signOut();
     setIsAuthenticated(false);
     setProducts([]);
@@ -343,7 +313,7 @@ function AdminPage() {
           estimatedMinutes: order.estimated_minutes,
         }),
       });
-      setMessage(`Pedido #${order.id.slice(0, 8)} atualizado para ${status}.`);
+      setMessage(`Pedido #${order.id.slice(0, 8)} atualizado para ${statusPt[status]}.`);
       await loadDashboard();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Falha ao atualizar pedido.");
@@ -418,7 +388,7 @@ function AdminPage() {
 
       <section className="glass-card mb-6 p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-xl font-bold text-foreground">Pedidos</h2>
+          <h2 className="text-xl font-bold text-foreground">Pedidos em andamento</h2>
           <div className="flex flex-wrap gap-2">
             <input
               value={customerSearch}
@@ -433,20 +403,20 @@ function AdminPage() {
             >
               <option value="all">Todos os status</option>
               {orderStatuses.map((status) => (
-                <option key={status} value={status}>{status}</option>
+                <option key={status} value={status}>{statusPt[status]}</option>
               ))}
             </select>
           </div>
         </div>
         <div className="grid gap-3">
-          {filteredOrders.map((order) => (
+          {activeOrders.map((order) => (
             <article key={order.id} className="rounded-2xl border border-border bg-card p-4">
               <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-start">
                 <div>
                   <p className="font-bold text-foreground">#{order.id.slice(0, 8)} • {order.customer_name}</p>
                   <p className="text-xs font-medium text-muted-foreground">Código rastreio: {order.tracking_code ?? "—"}</p>
                   <p className="text-xs font-medium text-muted-foreground">Código motoboy: {order.courier_code ?? "—"}</p>
-                  <p className="text-sm text-muted-foreground">R$ {Number(order.total).toFixed(2)} • {new Date(order.created_at).toLocaleString("pt-BR")}</p>
+                    <p className="text-sm text-muted-foreground">R$ {Number(order.total).toFixed(2)} • {new Date(order.created_at).toLocaleString("pt-BR")}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Última posição: {order.courier_updated_at ? new Date(order.courier_updated_at).toLocaleTimeString("pt-BR") : "sem atualização"}
                   </p>
@@ -455,7 +425,7 @@ function AdminPage() {
                       type="number"
                       min={0}
                       max={360}
-                      placeholder="Heading (0-360)"
+                      placeholder="Direção (0-360)"
                       value={order.courier_heading ?? ""}
                       onChange={(event) =>
                         setOrders((current) =>
@@ -494,25 +464,48 @@ function AdminPage() {
                     className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
                   >
                     {orderStatuses.map((status) => (
-                      <option key={status} value={status}>{status}</option>
+                      <option key={status} value={status}>{statusPt[status]}</option>
                     ))}
                   </select>
                   <button onClick={() => updateOrderStatus(order, order.status)} className="btn-soft px-4 py-2 text-xs">
-                    Atualizar localização
+                    Salvar status e previsão
                   </button>
                   <button onClick={() => copyCourierLink(order)} className="btn-soft px-4 py-2 text-xs">
                     Copiar link do motoboy
                   </button>
-                  {gpsOrderId === order.id ? (
-                    <button onClick={stopGps} className="btn-soft px-4 py-2 text-xs">Parar GPS ao vivo</button>
-                  ) : (
-                    <button onClick={() => startGps(order)} className="btn-hero px-4 py-2 text-xs">Iniciar GPS do celular</button>
+                  {order.courier_code && (
+                    <a
+                      href={`/entrega/${order.courier_code}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-hero px-4 py-2 text-center text-xs"
+                    >
+                      Abrir tela do motoboy
+                    </a>
                   )}
+                  <p className="rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
+                    O motoboy atualiza a localização pelo link de entrega deste pedido.
+                  </p>
                 </div>
               </div>
             </article>
           ))}
-          {!filteredOrders.length && <p className="text-sm text-muted-foreground">Nenhum pedido encontrado com os filtros atuais.</p>}
+          {!activeOrders.length && <p className="text-sm text-muted-foreground">Nenhum pedido em andamento com os filtros atuais.</p>}
+        </div>
+      </section>
+
+      <section className="glass-card mb-6 p-5">
+        <h2 className="mb-3 text-xl font-bold text-foreground">Histórico de entregues</h2>
+        <div className="grid gap-3">
+          {orderHistory.map((order) => (
+            <article key={order.id} className="rounded-2xl border border-border bg-card p-4">
+              <p className="font-bold text-foreground">#{order.id.slice(0, 8)} • {order.customer_name}</p>
+              <p className="text-xs font-medium text-muted-foreground">Código rastreio: {order.tracking_code ?? "—"}</p>
+              <p className="text-sm text-muted-foreground">R$ {Number(order.total).toFixed(2)} • {new Date(order.created_at).toLocaleString("pt-BR")}</p>
+              <p className="mt-1 text-xs font-semibold text-primary">Status: {statusPt[order.status]}</p>
+            </article>
+          ))}
+          {!orderHistory.length && <p className="text-sm text-muted-foreground">Nenhum pedido entregue no histórico com os filtros atuais.</p>}
         </div>
       </section>
 

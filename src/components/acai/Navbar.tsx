@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import acaiLogo from "@/assets/acai-logo.jpeg";
 
 const links = [
   { href: "#cardapio", label: "Cardápio" },
@@ -36,8 +37,9 @@ export function Navbar() {
           }`}
         >
           <div className="flex items-center justify-between gap-4">
-            <a href="#topo" className="text-lg font-extrabold text-foreground">
-              Açaí Prime
+            <a href="#topo" className="flex items-center gap-2 text-lg font-extrabold text-foreground">
+              <img src={acaiLogo} alt="Logo Açaí dos Amigos" className="h-10 w-10 rounded-md object-cover" />
+              Açaí dos Amigos
             </a>
             <div className="hidden items-center gap-5 md:flex">
               {links.map((link) => (

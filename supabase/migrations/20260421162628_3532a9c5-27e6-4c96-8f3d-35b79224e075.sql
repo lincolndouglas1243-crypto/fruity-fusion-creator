@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.update_courier_location(text, double precision, double precision, double precision) TO anon, authenticated;

@@ -1,15 +1,20 @@
+import acaiLogo from "@/assets/acai-logo.jpeg";
+
 export function FooterSection() {
   return (
     <footer className="brand-shell mt-16 pb-10">
       <div className="glass-card p-6">
         <div className="grid gap-5 text-sm text-muted-foreground md:grid-cols-3">
           <div>
-            <p className="text-base font-bold text-foreground">Açaí Prime</p>
+            <div className="flex items-center gap-2">
+              <img src={acaiLogo} alt="Logo Açaí dos Amigos" className="h-10 w-10 rounded-md object-cover" />
+              <p className="text-base font-bold text-foreground">Açaí dos Amigos</p>
+            </div>
             <p className="mt-2">Marca gourmet com foco em qualidade, velocidade e experiência premium.</p>
           </div>
           <div>
             <p className="font-bold text-foreground">Contato</p>
-            <p className="mt-2">(11) 99999-9999</p>
+            <p className="mt-2">(32) 98818-9807</p>
             <p>contato@acaiprime.com</p>
           </div>
           <div>

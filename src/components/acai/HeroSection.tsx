@@ -1,5 +1,5 @@
 import { motion, useScroll, useTransform } from "framer-motion";
-import acaiHero from "@/assets/acai-hero.jpg";
+import acaiHero from "@/assets/acai-banner.png";
 
 export function HeroSection() {
   const { scrollY } = useScroll();
@@ -9,7 +9,7 @@ export function HeroSection() {
     <section id="topo" className="relative min-h-screen overflow-hidden">
       <motion.img
         src={acaiHero}
-        alt="Copo de açaí gourmet com frutas, granola e leite condensado"
+        alt="Banner promocional Açaí dos Amigos com destaque para delivery e montagem personalizada"
         width={1920}
         height={1080}
         style={{ y }}

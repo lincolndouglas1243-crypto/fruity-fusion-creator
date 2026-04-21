@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const courierLocationSchema = z.object({
   lat: z.number().min(-90).max(90),
@@ -22,54 +22,50 @@ export const Route = createFileRoute("/api/courier/$courierCode/location")({
         const nowIso = new Date().toISOString();
         const courierCode = params.courierCode.trim().toUpperCase();
 
-        const url = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
-        const key = process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-        if (!url || !key) {
-          return Response.json({ error: "Configuração do servidor inválida." }, { status: 500 });
+        const { data: currentOrder, error: lookupError } = await supabaseAdmin
+          .from("orders")
+          .select("id, tracking_code, status")
+          .eq("courier_code", courierCode)
+          .maybeSingle();
+
+        if (lookupError) {
+          return Response.json({ error: "Não foi possível validar o pedido do motoboy." }, { status: 500 });
         }
 
-        const supabase = createClient<Database>(url, key, {
-          auth: { persistSession: false, autoRefreshToken: false },
-        });
+        if (!currentOrder) {
+          return Response.json({ error: "Código do motoboy inválido." }, { status: 404 });
+        }
 
-        const { data: updatedRows, error: rpcError } = await supabase.rpc("update_courier_location", {
-          _courier_code: courierCode,
-          _lat: parsed.data.lat,
-          _lng: parsed.data.lng,
-          _heading: parsed.data.heading ?? undefined,
-        });
+        if (currentOrder.status === "cancelled" || currentOrder.status === "delivered") {
+          return Response.json({ error: "Esse pedido já foi finalizado e não aceita mais localização." }, { status: 400 });
+        }
 
-        if (rpcError) {
-          console.error("Erro RPC update_courier_location", {
-            code: rpcError.code,
-            message: rpcError.message,
-            details: rpcError.details,
-            hint: rpcError.hint,
-            courierCode,
-          });
-          if (rpcError.message.includes("order_not_found") || rpcError.message.includes("invalid_courier_code")) {
-            return Response.json({ error: "Código do motoboy inválido." }, { status: 404 });
-          }
-          if (rpcError.message.includes("order_closed")) {
-            return Response.json({ error: "Esse pedido já foi finalizado e não aceita mais localização." }, { status: 400 });
-          }
-          if (rpcError.message.includes("invalid_latitude") || rpcError.message.includes("invalid_longitude")) {
-            return Response.json({ error: "Coordenadas inválidas para rastreamento." }, { status: 400 });
-          }
+        const nextStatus = currentOrder.status === "accepted" || currentOrder.status === "preparing" ? "on_the_way" : currentOrder.status;
+        const updatePayload: Database["public"]["Tables"]["orders"]["Update"] = {
+          courier_lat: parsed.data.lat,
+          courier_lng: parsed.data.lng,
+          courier_heading: parsed.data.heading ?? null,
+          courier_updated_at: nowIso,
+          updated_at: nowIso,
+          status: nextStatus,
+        };
+
+        if (nextStatus === "on_the_way") {
+          updatePayload.on_the_way_at = nowIso;
+        }
+
+        const { data: updated, error: updateError } = await supabaseAdmin
+          .from("orders")
+          .update(updatePayload)
+          .eq("id", currentOrder.id)
+          .select("id, tracking_code, courier_lat, courier_lng, courier_heading, courier_updated_at, status")
+          .single();
+
+        if (updateError || !updated) {
           return Response.json({ error: "Não foi possível atualizar a localização" }, { status: 400 });
         }
 
-        const updated = updatedRows?.[0];
-        if (!updated) {
-          return Response.json({ error: "Não foi possível atualizar a localização" }, { status: 400 });
-        }
-
-        return Response.json({
-          order: {
-            ...updated,
-            courier_updated_at: updated.courier_updated_at ?? nowIso,
-          },
-        });
+        return Response.json({ order: updated });
       },
     },
   },

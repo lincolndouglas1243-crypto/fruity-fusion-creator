@@ -468,11 +468,21 @@ function AdminPage() {
                     ))}
                   </select>
                   <button onClick={() => updateOrderStatus(order, order.status)} className="btn-soft px-4 py-2 text-xs">
-                    Atualizar localização
+                    Salvar status e previsão
                   </button>
                   <button onClick={() => copyCourierLink(order)} className="btn-soft px-4 py-2 text-xs">
                     Copiar link do motoboy
                   </button>
+                  {order.courier_code && (
+                    <a
+                      href={`/entrega/${order.courier_code}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-hero px-4 py-2 text-center text-xs"
+                    >
+                      Abrir tela do motoboy
+                    </a>
+                  )}
                   <p className="rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
                     O motoboy atualiza a localização pelo link de entrega deste pedido.
                   </p>

@@ -120,6 +120,16 @@ export function OrderTrackingSection() {
     };
   }, [activeOrder?.id]);
 
+  useEffect(() => {
+    if (!orderId.trim()) return;
+
+    const timer = window.setInterval(() => {
+      loadOrder(orderId);
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [orderId]);
+
   return (
     <SectionReveal className="brand-shell mt-20">
       <div id="acompanhar" className="glass-card p-7">
@@ -190,12 +200,17 @@ export function OrderTrackingSection() {
 
             <div className="rounded-2xl border border-border bg-card p-3">
               {activeOrder.courier_lat !== null && activeOrder.courier_lng !== null ? (
-                <iframe
-                  title="Mapa do motoboy"
-                  src={mapUrl(activeOrder.courier_lat, activeOrder.courier_lng)}
-                  className="h-[360px] w-full rounded-xl border border-border"
-                  loading="lazy"
-                />
+                <div className="relative h-[360px] overflow-hidden rounded-xl border border-border">
+                  <iframe
+                    title="Mapa do motoboy"
+                    src={mapUrl(activeOrder.courier_lat, activeOrder.courier_lng)}
+                    className="h-full w-full"
+                    loading="lazy"
+                  />
+                  <div className="pointer-events-none absolute right-3 top-3 rounded-lg border border-border bg-background/90 px-3 py-1 text-xs font-semibold text-foreground">
+                    🏍️ Motoboy ao vivo
+                  </div>
+                </div>
               ) : (
                 <div className="flex h-[360px] items-center justify-center rounded-xl border border-dashed border-border text-center text-sm text-muted-foreground">
                   O motoboy ainda não compartilhou localização ao vivo.

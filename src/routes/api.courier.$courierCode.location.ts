@@ -40,17 +40,22 @@ export const Route = createFileRoute("/api/courier/$courierCode/location")({
         }
 
         const nextStatus = currentOrder.status === "accepted" || currentOrder.status === "preparing" ? "on_the_way" : currentOrder.status;
+        const updatePayload: Database["public"]["Tables"]["orders"]["Update"] = {
+          courier_lat: parsed.data.lat,
+          courier_lng: parsed.data.lng,
+          courier_heading: parsed.data.heading ?? null,
+          courier_updated_at: nowIso,
+          updated_at: nowIso,
+          status: nextStatus,
+        };
+
+        if (nextStatus === "on_the_way") {
+          updatePayload.on_the_way_at = nowIso;
+        }
+
         const { data: updated, error: updateError } = await supabaseAdmin
           .from("orders")
-          .update({
-            courier_lat: parsed.data.lat,
-            courier_lng: parsed.data.lng,
-            courier_heading: parsed.data.heading ?? null,
-            courier_updated_at: nowIso,
-            updated_at: nowIso,
-            status: nextStatus,
-            on_the_way_at: nextStatus === "on_the_way" ? nowIso : null,
-          })
+          .update(updatePayload)
           .eq("id", currentOrder.id)
           .select("id, tracking_code, courier_lat, courier_lng, courier_heading, courier_updated_at, status")
           .single();

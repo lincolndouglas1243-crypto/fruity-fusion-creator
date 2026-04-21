@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { createClient } from "@supabase/supabase-js";
 
 const courierLocationSchema = z.object({
   lat: z.number().min(-90).max(90),
@@ -22,7 +22,17 @@ export const Route = createFileRoute("/api/courier/$courierCode/location")({
         const nowIso = new Date().toISOString();
         const courierCode = params.courierCode.trim().toUpperCase();
 
-        const { data: updatedRows, error: rpcError } = await supabaseAdmin.rpc("update_courier_location", {
+        const url = process.env.SUPABASE_URL;
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (!url || !serviceKey) {
+          return Response.json({ error: "Configuração de backend incompleta para rastreio." }, { status: 500 });
+        }
+
+        const adminClient = createClient<Database>(url, serviceKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+
+        const { data: updatedRows, error: rpcError } = await adminClient.rpc("update_courier_location", {
           _courier_code: courierCode,
           _lat: parsed.data.lat,
           _lng: parsed.data.lng,

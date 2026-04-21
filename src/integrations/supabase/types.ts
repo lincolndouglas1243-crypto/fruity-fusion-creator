@@ -385,6 +385,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_order_tracking: {
+        Args: { _tracking_code: string }
+        Returns: {
+          courier_heading: number
+          courier_lat: number
+          courier_lng: number
+          courier_updated_at: string
+          created_at: string
+          estimated_minutes: number
+          id: string
+          items: Json
+          status: Database["public"]["Enums"]["order_status"]
+          total: number
+          tracking_code: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

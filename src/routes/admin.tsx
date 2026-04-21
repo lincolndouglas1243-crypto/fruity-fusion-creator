@@ -201,7 +201,7 @@ function AdminPage() {
           if (previous.status && next.status && previous.status !== next.status) {
             const shortId = next.id?.slice(0, 8) ?? "pedido";
             playAdminAlert();
-            notifyAdmin("Pedido mudou de status", `#${shortId}: ${previous.status} → ${next.status}`);
+            notifyAdmin("Pedido mudou de status", `#${shortId}: ${statusPt[previous.status]} → ${statusPt[next.status]}`);
           }
         }
 
@@ -403,13 +403,13 @@ function AdminPage() {
             >
               <option value="all">Todos os status</option>
               {orderStatuses.map((status) => (
-                <option key={status} value={status}>{status}</option>
+                <option key={status} value={status}>{statusPt[status]}</option>
               ))}
             </select>
           </div>
         </div>
         <div className="grid gap-3">
-          {filteredOrders.map((order) => (
+          {activeOrders.map((order) => (
             <article key={order.id} className="rounded-2xl border border-border bg-card p-4">
               <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-start">
                 <div>
@@ -481,6 +481,21 @@ function AdminPage() {
             </article>
           ))}
           {!activeOrders.length && <p className="text-sm text-muted-foreground">Nenhum pedido em andamento com os filtros atuais.</p>}
+        </div>
+      </section>
+
+      <section className="glass-card mb-6 p-5">
+        <h2 className="mb-3 text-xl font-bold text-foreground">Histórico de entregues</h2>
+        <div className="grid gap-3">
+          {orderHistory.map((order) => (
+            <article key={order.id} className="rounded-2xl border border-border bg-card p-4">
+              <p className="font-bold text-foreground">#{order.id.slice(0, 8)} • {order.customer_name}</p>
+              <p className="text-xs font-medium text-muted-foreground">Código rastreio: {order.tracking_code ?? "—"}</p>
+              <p className="text-sm text-muted-foreground">R$ {Number(order.total).toFixed(2)} • {new Date(order.created_at).toLocaleString("pt-BR")}</p>
+              <p className="mt-1 text-xs font-semibold text-primary">Status: {statusPt[order.status]}</p>
+            </article>
+          ))}
+          {!orderHistory.length && <p className="text-sm text-muted-foreground">Nenhum pedido entregue no histórico com os filtros atuais.</p>}
         </div>
       </section>
 

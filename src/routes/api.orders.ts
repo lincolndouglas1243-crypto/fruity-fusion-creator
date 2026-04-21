@@ -10,6 +10,12 @@ const customSizePrices: Record<string, number> = {
   "700ml": 34.9,
 };
 
+const presetMenuPrices: Record<string, number> = {
+  "Açaí Supreme": 29.9,
+  "Dark Berry": 31.9,
+  "Neon Tropical": 33.9,
+};
+
 const customToppingPrice = 3;
 
 function getPublicServerClient() {
@@ -87,13 +93,15 @@ export const Route = createFileRoute("/api/orders")({
             }
 
             const trustedPrice = productPriceMap.get(trimmedName);
-            if (typeof trustedPrice !== "number") {
+            const trustedFallback = presetMenuPrices[trimmedName];
+            const resolvedPrice = typeof trustedPrice === "number" ? trustedPrice : trustedFallback;
+            if (typeof resolvedPrice !== "number") {
               throw new Error(`Produto inválido ou inativo: ${trimmedName}`);
             }
 
             return {
               ...item,
-              trustedUnitPrice: Number(trustedPrice.toFixed(2)),
+              trustedUnitPrice: Number(resolvedPrice.toFixed(2)),
             };
           });
 

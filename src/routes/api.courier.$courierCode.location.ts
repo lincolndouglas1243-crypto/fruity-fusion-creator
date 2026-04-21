@@ -40,6 +40,13 @@ export const Route = createFileRoute("/api/courier/$courierCode/location")({
         });
 
         if (rpcError) {
+          console.error("Erro RPC update_courier_location", {
+            code: rpcError.code,
+            message: rpcError.message,
+            details: rpcError.details,
+            hint: rpcError.hint,
+            courierCode,
+          });
           if (rpcError.message.includes("order_not_found") || rpcError.message.includes("invalid_courier_code")) {
             return Response.json({ error: "Código do motoboy inválido." }, { status: 404 });
           }

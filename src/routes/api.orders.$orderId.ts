@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { Database } from "@/integrations/supabase/types";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createClient } from "@supabase/supabase-js";
 
 function getPublicServerClient(trackingCode?: string) {
@@ -72,21 +71,32 @@ export const Route = createFileRoute("/api/orders/$orderId")({
         }
 
         if (!token) {
-          const { data: trackedOrder } = await supabaseAdmin
-            .from("orders")
-            .select("id, tracking_code, status, total, created_at, courier_lat, courier_lng, courier_heading, courier_updated_at, estimated_minutes")
-            .eq("tracking_code", lookup)
-            .maybeSingle();
+          const { data: trackedRows, error: trackingError } = await getPublicServerClient().rpc("get_public_order_tracking", {
+            _tracking_code: lookup,
+          });
 
+          if (trackingError) {
+            return Response.json({ error: "Não foi possível carregar rastreio" }, { status: 400 });
+          }
+
+          const trackedOrder = trackedRows?.[0];
           if (!trackedOrder) return Response.json({ error: "Pedido não encontrado" }, { status: 404 });
 
-          const { data: trackedItems } = await supabaseAdmin
-            .from("order_items")
-            .select("id, product_name, quantity, selected_size, selected_toppings, line_total")
-            .eq("order_id", trackedOrder.id)
-            .order("created_at", { ascending: true });
-
-          return Response.json({ order: trackedOrder, items: trackedItems ?? [] });
+          return Response.json({
+            order: {
+              id: trackedOrder.id,
+              tracking_code: trackedOrder.tracking_code,
+              status: trackedOrder.status,
+              total: trackedOrder.total,
+              created_at: trackedOrder.created_at,
+              courier_lat: trackedOrder.courier_lat,
+              courier_lng: trackedOrder.courier_lng,
+              courier_heading: trackedOrder.courier_heading,
+              courier_updated_at: trackedOrder.courier_updated_at,
+              estimated_minutes: trackedOrder.estimated_minutes,
+            },
+            items: Array.isArray(trackedOrder.items) ? trackedOrder.items : [],
+          });
         }
 
         const { data: order } = await supabase

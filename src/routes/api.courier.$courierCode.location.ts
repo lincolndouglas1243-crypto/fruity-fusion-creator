@@ -26,6 +26,16 @@ export const Route = createFileRoute("/api/courier/$courierCode/location")({
         });
 
         if (error || !data?.length) {
+          const reason = error?.message ?? "unknown";
+          if (reason.includes("order_closed")) {
+            return Response.json({ error: "Esse pedido já foi finalizado e não aceita mais localização." }, { status: 400 });
+          }
+          if (reason.includes("order_not_found")) {
+            return Response.json({ error: "Código do motoboy inválido." }, { status: 404 });
+          }
+          if (reason.includes("invalid_latitude") || reason.includes("invalid_longitude")) {
+            return Response.json({ error: "Coordenadas inválidas. Ative o GPS de alta precisão." }, { status: 400 });
+          }
           return Response.json({ error: "Não foi possível atualizar a localização" }, { status: 400 });
         }
 

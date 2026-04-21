@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { authFetch } from "@/lib/api-client";
 
@@ -53,6 +53,15 @@ type CheckoutErrorLogRow = {
 
 const orderStatuses: Array<OrderRow["status"]> = ["pending", "accepted", "preparing", "on_the_way", "delivered", "cancelled"];
 
+const statusPt: Record<OrderRow["status"], string> = {
+  pending: "Pendente",
+  accepted: "Aceito",
+  preparing: "Preparando",
+  on_the_way: "A caminho",
+  delivered: "Entregue",
+  cancelled: "Cancelado",
+};
+
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
@@ -76,8 +85,6 @@ function AdminPage() {
   const [checkoutErrorLogs, setCheckoutErrorLogs] = useState<CheckoutErrorLogRow[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | OrderRow["status"]>("all");
   const [customerSearch, setCustomerSearch] = useState("");
-  const [gpsOrderId, setGpsOrderId] = useState<string | null>(null);
-  const gpsWatchRef = useRef<number | null>(null);
 
   const playAdminAlert = () => {
     try {
@@ -121,6 +128,16 @@ function AdminPage() {
     });
   }, [orders, statusFilter, customerSearch]);
 
+  const activeOrders = useMemo(
+    () => filteredOrders.filter((item) => item.status !== "delivered"),
+    [filteredOrders],
+  );
+
+  const orderHistory = useMemo(
+    () => filteredOrders.filter((item) => item.status === "delivered"),
+    [filteredOrders],
+  );
+
   const totals = useMemo(() => {
     const revenue = orders.reduce((sum, item) => sum + Number(item.total || 0), 0);
     return {
@@ -156,6 +173,15 @@ function AdminPage() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const poll = window.setInterval(() => {
+      loadDashboard();
+    }, 5000);
+
+    return () => window.clearInterval(poll);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!isAuthenticated) return;

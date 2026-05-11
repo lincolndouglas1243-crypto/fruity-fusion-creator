@@ -8,23 +8,23 @@ import { formatCurrency, useCart } from "./cart-context";
 const items = [
   {
     image: acaiCup1,
-    title: "Açaí Supreme",
-    description: "Açaí cremoso, morango, banana, leite condensado e granola premium.",
-    price: 29.9,
+    title: "Garrafa Banana • Morango • Maracujá",
+    description: "Açaí de garrafa 300ml com combinação frutada e equilibrada para o dia a dia.",
+    price: 13,
     badge: "Mais vendido",
   },
   {
     image: acaiCup2,
-    title: "Dark Berry",
-    description: "Mix de frutas vermelhas, kiwi, crocante de chocolate e mel especial.",
-    price: 31.9,
+    title: "Garrafa Nutella • Leite Ninho • Leite Condensado",
+    description: "Açaí de garrafa 500ml com perfil cremoso e doce na medida certa.",
+    price: 20,
     badge: "Gourmet",
   },
   {
     image: acaiCup3,
-    title: "Neon Tropical",
-    description: "Camadas artesanais com toppings exclusivos e finalização cremosa.",
-    price: 33.9,
+    title: "Garrafa Paçoca • Banana • Morango",
+    description: "Açaí de garrafa 500ml com blend clássico e sabor intenso.",
+    price: 20,
     badge: "Oferta do dia",
   },
 ];

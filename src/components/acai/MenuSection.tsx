@@ -1,27 +1,26 @@
 import { motion } from "framer-motion";
-import acaiCup1 from "@/assets/acai-cup-1.jpg";
-import acaiCup2 from "@/assets/acai-cup-2.jpg";
-import acaiCup3 from "@/assets/acai-cup-3.jpg";
+import acaiGarrafaFrutas from "@/assets/acai-garrafa-frutas.png";
+import acaiGarrafaNutella from "@/assets/acai-garrafa-nutella.png";
 import { SectionReveal } from "./SectionReveal";
 import { formatCurrency, useCart } from "./cart-context";
 
 const items = [
   {
-    image: acaiCup1,
+    image: acaiGarrafaFrutas,
     title: "Garrafa Banana • Morango • Maracujá",
     description: "Açaí de garrafa 300ml com combinação frutada e equilibrada para o dia a dia.",
     price: 13,
     badge: "Mais vendido",
   },
   {
-    image: acaiCup2,
+    image: acaiGarrafaNutella,
     title: "Garrafa Nutella • Leite Ninho • Leite Condensado",
     description: "Açaí de garrafa 500ml com perfil cremoso e doce na medida certa.",
     price: 20,
     badge: "Gourmet",
   },
   {
-    image: acaiCup3,
+    image: acaiGarrafaFrutas,
     title: "Garrafa Paçoca • Banana • Morango",
     description: "Açaí de garrafa 500ml com blend clássico e sabor intenso.",
     price: 20,

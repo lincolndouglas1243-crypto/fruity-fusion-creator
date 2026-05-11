@@ -67,9 +67,11 @@ function OrderTrackingPage() {
   useEffect(() => {
     const load = async () => {
       try {
+        const trackingToken = localStorage.getItem(`tracking-token:${orderId}`) ?? "";
         const response = await fetch(`/api/orders/${orderId}`, {
           headers: {
             "x-tracking-code": orderId,
+            "x-tracking-token": trackingToken,
           },
         });
         const body = await response.json().catch(() => ({}));
@@ -87,9 +89,11 @@ function OrderTrackingPage() {
   useEffect(() => {
     const timer = window.setInterval(async () => {
       try {
+        const trackingToken = localStorage.getItem(`tracking-token:${orderId}`) ?? "";
         const response = await fetch(`/api/orders/${orderId}`, {
           headers: {
             "x-tracking-code": orderId,
+            "x-tracking-token": trackingToken,
           },
         });
         if (!response.ok) return;
@@ -183,7 +187,7 @@ function OrderTrackingPage() {
 
             <article className="rounded-2xl border border-border bg-card p-3">
               {order.courier_lat !== null && order.courier_lng !== null ? (
-                <div className="relative h-[390px] overflow-hidden rounded-xl border border-border">
+                <div className="relative h-[240px] overflow-hidden rounded-xl border border-border sm:h-[300px] lg:h-[390px]">
                   <iframe
                     title="Mapa do motoboy"
                     src={mapUrl(order.courier_lat, order.courier_lng)}
@@ -195,7 +199,7 @@ function OrderTrackingPage() {
                   </div>
                 </div>
               ) : (
-                <div className="flex h-[390px] items-center justify-center rounded-xl border border-dashed border-border text-center text-sm text-muted-foreground">
+                <div className="flex h-[240px] items-center justify-center rounded-xl border border-dashed border-border text-center text-sm text-muted-foreground sm:h-[300px] lg:h-[390px]">
                   O motoboy ainda não iniciou o rastreio ao vivo.
                 </div>
               )}

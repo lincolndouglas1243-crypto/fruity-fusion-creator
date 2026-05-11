@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import type { Database } from "@/integrations/supabase/types";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const courierLocationSchema = z.object({
   lat: z.number().min(-90).max(90),
@@ -16,23 +15,13 @@ export const Route = createFileRoute("/api/courier/$courierCode/location")({
         const body = await request.json().catch(() => null);
         const parsed = courierLocationSchema.safeParse(body);
         if (!parsed.success) {
-          return Response.json({ error: "Localização inválida" }, { status: 400 });
+          return Response.json({ error: "Localização inválida. Envie latitude entre -90 e 90, longitude entre -180 e 180 e direção entre 0 e 360." }, { status: 400 });
         }
 
         const nowIso = new Date().toISOString();
         const courierCode = params.courierCode.trim().toUpperCase();
 
-        const url = process.env.SUPABASE_URL;
-        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (!url || !serviceKey) {
-          return Response.json({ error: "Configuração de backend incompleta para rastreio." }, { status: 500 });
-        }
-
-        const adminClient = createClient<Database>(url, serviceKey, {
-          auth: { persistSession: false, autoRefreshToken: false },
-        });
-
-        const { data: updatedRows, error: rpcError } = await adminClient.rpc("update_courier_location", {
+        const { data: updatedRows, error: rpcError } = await supabaseAdmin.rpc("update_courier_location", {
           _courier_code: courierCode,
           _lat: parsed.data.lat,
           _lng: parsed.data.lng,
@@ -40,6 +29,9 @@ export const Route = createFileRoute("/api/courier/$courierCode/location")({
         });
 
         if (rpcError) {
+          if (rpcError.message.includes("invalid_latitude") || rpcError.message.includes("invalid_longitude") || rpcError.message.includes("invalid_heading")) {
+            return Response.json({ error: "Coordenadas inválidas. Verifique o GPS e tente novamente." }, { status: 400 });
+          }
           if (rpcError.message.includes("order_not_found") || rpcError.message.includes("invalid_courier_code")) {
             return Response.json({ error: "Código do motoboy inválido." }, { status: 404 });
           }

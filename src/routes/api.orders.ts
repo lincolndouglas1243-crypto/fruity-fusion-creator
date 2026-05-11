@@ -3,20 +3,20 @@ import { createOrderSchema } from "@/lib/order-schemas";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database } from "@/integrations/supabase/types";
 import { createClient } from "@supabase/supabase-js";
+import { createHash } from "crypto";
 
 const customSizePrices: Record<string, number> = {
-  "300ml": 19.9,
-  "500ml": 26.9,
-  "700ml": 34.9,
+  "300ml": 13,
+  "500ml": 20,
 };
 
 const presetMenuPrices: Record<string, number> = {
-  "Açaí Supreme": 29.9,
-  "Dark Berry": 31.9,
-  "Neon Tropical": 33.9,
+  "Garrafa Banana • Morango • Maracujá": 13,
+  "Garrafa Nutella • Leite Ninho • Leite Condensado": 20,
+  "Garrafa Paçoca • Banana • Morango": 20,
 };
 
-const customToppingPrice = 3;
+const customToppingPrice = 2;
 
 function getPublicServerClient() {
   const url = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
@@ -108,12 +108,15 @@ export const Route = createFileRoute("/api/orders")({
           const subtotal = pricedItems.reduce((sum, item) => sum + item.trustedUnitPrice * item.quantity, 0);
           const total = subtotal + input.deliveryFee;
           const trackingCode = `AP-${crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase()}`;
+          const trackingToken = crypto.randomUUID().replace(/-/g, "").slice(0, 24).toUpperCase();
+          const trackingTokenHash = createHash("sha256").update(trackingToken).digest("hex");
 
           const { data: order, error: orderError } = await supabaseAdmin
             .from("orders")
             .insert({
               ...(userId ? { user_id: userId } : {}),
               tracking_code: trackingCode,
+              tracking_token_hash: trackingTokenHash,
               status: "pending",
               customer_name: input.customerName,
               customer_phone: input.customerPhone,
@@ -163,6 +166,7 @@ export const Route = createFileRoute("/api/orders")({
           return Response.json({
             orderId: order.id,
             trackingCode: order.tracking_code,
+            trackingToken,
             status: order.status,
             total: order.total,
             summary: {

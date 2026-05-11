@@ -25,7 +25,7 @@ type CartContextValue = {
     deliveryAddress: string;
     notes?: string;
     deliveryFee: number;
-  }) => Promise<{ orderId: string; status: string; total: number }>;
+  }) => Promise<{ orderId: string; status: string; total: number; trackingCode?: string; trackingToken?: string }>;
   isSubmitting: boolean;
   lastOrderId: string | null;
   lastTrackingCode: string | null;
@@ -140,11 +140,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
         setLastOrderId(body.orderId ?? null);
         setLastTrackingCode(body.trackingCode ?? null);
+        if (typeof window !== "undefined" && body.trackingCode && body.trackingToken) {
+          localStorage.setItem(`tracking-token:${body.trackingCode}`, body.trackingToken);
+        }
         setItems([]);
         return {
           orderId: body.orderId,
           status: body.status,
           total: body.total,
+          trackingCode: body.trackingCode,
+          trackingToken: body.trackingToken,
         };
       } finally {
         setIsSubmitting(false);

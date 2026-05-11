@@ -12,6 +12,7 @@ export function CartSummarySection() {
   const [notes, setNotes] = useState("");
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [latestTrackingUrl, setLatestTrackingUrl] = useState<string | null>(null);
 
   const handleSubmitOrder = async () => {
     setFeedback(null);
@@ -24,6 +25,9 @@ export function CartSummarySection() {
         deliveryFee,
       });
       setFeedback(`Pedido #${result.orderId.slice(0, 8)} enviado com sucesso!`);
+      if (result.trackingCode && result.trackingToken && typeof window !== "undefined") {
+        setLatestTrackingUrl(`${window.location.origin}/pedido/${result.trackingCode}?t=${encodeURIComponent(result.trackingToken)}`);
+      }
       setCustomerName("");
       setCustomerPhone("");
       setDeliveryAddress("");
@@ -35,8 +39,8 @@ export function CartSummarySection() {
 
   const handleShareTracking = async () => {
     const code = lastTrackingCode ?? lastOrderId;
-    if (!code) return;
-    const trackingUrl = `${window.location.origin}/pedido/${code}`;
+    if (!code && !latestTrackingUrl) return;
+    const trackingUrl = latestTrackingUrl ?? `${window.location.origin}/pedido/${code}`;
     try {
       await navigator.clipboard.writeText(trackingUrl);
       setFeedback("Link de rastreio copiado! Envie ao cliente no WhatsApp.");
@@ -151,7 +155,7 @@ export function CartSummarySection() {
               <p>{feedback ?? `Último pedido: #${lastOrderId?.slice(0, 8)}`}</p>
               {(lastTrackingCode || lastOrderId) && (
                 <div className="flex flex-wrap items-center gap-3">
-                  <a href={`/pedido/${lastTrackingCode ?? lastOrderId}`} className="story-link text-primary">
+                  <a href={latestTrackingUrl ?? `/pedido/${lastTrackingCode ?? lastOrderId}`} className="story-link text-primary">
                     Abrir link de rastreio premium
                   </a>
                   <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">

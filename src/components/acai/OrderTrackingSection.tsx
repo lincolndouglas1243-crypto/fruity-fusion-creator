@@ -64,9 +64,11 @@ export function OrderTrackingSection() {
     setError(null);
     try {
       const trackingLookup = id.trim();
+      const trackingToken = typeof window !== "undefined" ? localStorage.getItem(`tracking-token:${trackingLookup}`) ?? "" : "";
       const response = await fetch(`/api/orders/${trackingLookup}`, {
         headers: {
           "x-tracking-code": trackingLookup,
+          "x-tracking-token": trackingToken,
         },
       });
       const result = await response.json().catch(() => ({}));
@@ -200,7 +202,7 @@ export function OrderTrackingSection() {
 
             <div className="rounded-2xl border border-border bg-card p-3">
               {activeOrder.courier_lat !== null && activeOrder.courier_lng !== null ? (
-                <div className="relative h-[360px] overflow-hidden rounded-xl border border-border">
+                <div className="relative h-[220px] overflow-hidden rounded-xl border border-border sm:h-[280px] lg:h-[360px]">
                   <iframe
                     title="Mapa do motoboy"
                     src={mapUrl(activeOrder.courier_lat, activeOrder.courier_lng)}
@@ -212,7 +214,7 @@ export function OrderTrackingSection() {
                   </div>
                 </div>
               ) : (
-                <div className="flex h-[360px] items-center justify-center rounded-xl border border-dashed border-border text-center text-sm text-muted-foreground">
+                <div className="flex h-[220px] items-center justify-center rounded-xl border border-dashed border-border text-center text-sm text-muted-foreground sm:h-[280px] lg:h-[360px]">
                   O motoboy ainda não compartilhou localização ao vivo.
                 </div>
               )}

@@ -1,19 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { Database } from "@/integrations/supabase/types";
 import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-function getPublicServerClient(trackingCode?: string) {
+function getPublicServerClient() {
   const url = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
   const key = process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) throw new Error("Server configuration error: orders client is not configured");
   return createClient<Database>(url, key, {
-    global: trackingCode
-      ? {
-          headers: {
-            "x-tracking-code": trackingCode,
-          },
-        }
-      : undefined,
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
@@ -43,9 +37,10 @@ export const Route = createFileRoute("/api/orders/$orderId")({
     handlers: {
       GET: async ({ request, params }) => {
         const token = getBearerToken(request);
+        const trackingToken = request.headers.get("x-tracking-token")?.trim() ?? "";
         const lookup = params.orderId.trim();
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(lookup);
-        let supabase = getPublicServerClient(token ? undefined : lookup);
+        let supabase = getPublicServerClient();
         let userId: string | null = null;
         let isAdmin = false;
 
@@ -71,8 +66,13 @@ export const Route = createFileRoute("/api/orders/$orderId")({
         }
 
         if (!token) {
-          const { data: trackedRows, error: trackingError } = await getPublicServerClient().rpc("get_public_order_tracking", {
+          if (!trackingToken || trackingToken.length < 16) {
+            return Response.json({ error: "Link de rastreio inválido ou expirado." }, { status: 401 });
+          }
+
+          const { data: trackedRows, error: trackingError } = await supabaseAdmin.rpc("get_public_order_tracking_secure", {
             _tracking_code: lookup,
+            _tracking_token: trackingToken,
           });
 
           if (trackingError) {
@@ -106,7 +106,7 @@ export const Route = createFileRoute("/api/orders/$orderId")({
           .maybeSingle();
 
         if (!order) return Response.json({ error: "Pedido não encontrado" }, { status: 404 });
-        if (!isAdmin && order.user_id && order.user_id !== userId) return Response.json({ error: "Sem permissão" }, { status: 403 });
+        if (!isAdmin && order.user_id !== userId) return Response.json({ error: "Sem permissão" }, { status: 403 });
 
         const { data: items } = await supabase
           .from("order_items")

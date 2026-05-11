@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PedidoOrderIdRouteImport } from './routes/pedido.$orderId'
 import { Route as EntregaCourierCodeRouteImport } from './routes/entrega.$courierCode'
 import { Route as ApiOrdersRouteImport } from './routes/api.orders'
+import { Route as ApiFeedbackRouteImport } from './routes/api.feedback'
 import { Route as ApiOrdersMineRouteImport } from './routes/api.orders.mine'
 import { Route as ApiOrdersOrderIdRouteImport } from './routes/api.orders.$orderId'
 import { Route as ApiAdminPromotionsRouteImport } from './routes/api.admin.promotions'
@@ -45,6 +46,11 @@ const EntregaCourierCodeRoute = EntregaCourierCodeRouteImport.update({
 const ApiOrdersRoute = ApiOrdersRouteImport.update({
   id: '/api/orders',
   path: '/api/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFeedbackRoute = ApiFeedbackRouteImport.update({
+  id: '/api/feedback',
+  path: '/api/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOrdersMineRoute = ApiOrdersMineRouteImport.update({
@@ -88,6 +94,7 @@ const ApiAdminOrdersOrderIdStatusRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/api/feedback': typeof ApiFeedbackRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
   '/entrega/$courierCode': typeof EntregaCourierCodeRoute
   '/pedido/$orderId': typeof PedidoOrderIdRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/api/feedback': typeof ApiFeedbackRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
   '/entrega/$courierCode': typeof EntregaCourierCodeRoute
   '/pedido/$orderId': typeof PedidoOrderIdRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/api/feedback': typeof ApiFeedbackRoute
   '/api/orders': typeof ApiOrdersRouteWithChildren
   '/entrega/$courierCode': typeof EntregaCourierCodeRoute
   '/pedido/$orderId': typeof PedidoOrderIdRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/api/feedback'
     | '/api/orders'
     | '/entrega/$courierCode'
     | '/pedido/$orderId'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/api/feedback'
     | '/api/orders'
     | '/entrega/$courierCode'
     | '/pedido/$orderId'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/api/feedback'
     | '/api/orders'
     | '/entrega/$courierCode'
     | '/pedido/$orderId'
@@ -176,6 +188,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  ApiFeedbackRoute: typeof ApiFeedbackRoute
   ApiOrdersRoute: typeof ApiOrdersRouteWithChildren
   EntregaCourierCodeRoute: typeof EntregaCourierCodeRoute
   PedidoOrderIdRoute: typeof PedidoOrderIdRoute
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/api/orders'
       fullPath: '/api/orders'
       preLoaderRoute: typeof ApiOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/feedback': {
+      id: '/api/feedback'
+      path: '/api/feedback'
+      fullPath: '/api/feedback'
+      preLoaderRoute: typeof ApiFeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/orders/mine': {
@@ -292,6 +312,7 @@ const ApiOrdersRouteWithChildren = ApiOrdersRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  ApiFeedbackRoute: ApiFeedbackRoute,
   ApiOrdersRoute: ApiOrdersRouteWithChildren,
   EntregaCourierCodeRoute: EntregaCourierCodeRoute,
   PedidoOrderIdRoute: PedidoOrderIdRoute,

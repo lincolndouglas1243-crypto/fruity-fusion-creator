@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback_entries: {
+        Row: {
+          approved: boolean
+          comment: string
+          created_at: string
+          customer_name: string
+          id: string
+          rating: number
+        }
+        Insert: {
+          approved?: boolean
+          comment: string
+          created_at?: string
+          customer_name: string
+          id?: string
+          rating: number
+        }
+        Update: {
+          approved?: boolean
+          comment?: string
+          created_at?: string
+          customer_name?: string
+          id?: string
+          rating?: number
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -117,6 +144,7 @@ export type Database = {
           subtotal: number
           total: number
           tracking_code: string
+          tracking_token_hash: string
           updated_at: string
           user_id: string | null
           whatsapp_message: string | null
@@ -142,6 +170,7 @@ export type Database = {
           subtotal: number
           total: number
           tracking_code: string
+          tracking_token_hash: string
           updated_at?: string
           user_id?: string | null
           whatsapp_message?: string | null
@@ -167,6 +196,7 @@ export type Database = {
           subtotal?: number
           total?: number
           tracking_code?: string
+          tracking_token_hash?: string
           updated_at?: string
           user_id?: string | null
           whatsapp_message?: string | null
@@ -387,6 +417,22 @@ export type Database = {
     Functions: {
       get_public_order_tracking: {
         Args: { _tracking_code: string }
+        Returns: {
+          courier_heading: number
+          courier_lat: number
+          courier_lng: number
+          courier_updated_at: string
+          created_at: string
+          estimated_minutes: number
+          id: string
+          items: Json
+          status: Database["public"]["Enums"]["order_status"]
+          total: number
+          tracking_code: string
+        }[]
+      }
+      get_public_order_tracking_secure: {
+        Args: { _tracking_code: string; _tracking_token: string }
         Returns: {
           courier_heading: number
           courier_lat: number

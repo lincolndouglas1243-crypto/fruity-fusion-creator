@@ -4,18 +4,17 @@ import { SectionReveal } from "./SectionReveal";
 import { formatCurrency, useCart } from "./cart-context";
 
 const sizes = [
-  { name: "300ml", price: 19.9 },
-  { name: "500ml", price: 26.9 },
-  { name: "700ml", price: 34.9 },
+  { name: "300ml", price: 13 },
+  { name: "500ml", price: 20 },
 ];
 
-const toppings = ["Morango", "Banana", "Kiwi", "Granola", "Leite condensado", "Nutella", "Paçoca", "Ovomaltine"];
-const TOPPING_PRICE = 3;
+const toppings = ["Banana", "Morango", "Maracujá", "Nutella", "Leite Ninho", "Leite Condensado", "Paçoca"];
+const TOPPING_PRICE = 2;
 
 export function BuildYourOwnSection() {
   const { addCustomAcai } = useCart();
-  const [selectedSize, setSelectedSize] = useState(sizes[1]);
-  const [selectedToppings, setSelectedToppings] = useState<string[]>(["Granola", "Leite condensado"]);
+  const [selectedSize, setSelectedSize] = useState(sizes[0]);
+  const [selectedToppings, setSelectedToppings] = useState<string[]>(["Banana", "Morango"]);
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const totalPrice = useMemo(

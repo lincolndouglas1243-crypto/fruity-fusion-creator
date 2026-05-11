@@ -54,6 +54,8 @@ export const Route = createFileRoute("/pedido/$orderId")({
 
 function OrderTrackingPage() {
   const { orderId } = Route.useParams();
+  const search = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+  const tokenFromUrl = search.get("t") ?? "";
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +69,10 @@ function OrderTrackingPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const trackingToken = localStorage.getItem(`tracking-token:${orderId}`) ?? "";
+        if (tokenFromUrl && typeof window !== "undefined") {
+          localStorage.setItem(`tracking-token:${orderId}`, tokenFromUrl);
+        }
+        const trackingToken = localStorage.getItem(`tracking-token:${orderId}`) ?? tokenFromUrl;
         const response = await fetch(`/api/orders/${orderId}`, {
           headers: {
             "x-tracking-code": orderId,
@@ -89,7 +94,7 @@ function OrderTrackingPage() {
   useEffect(() => {
     const timer = window.setInterval(async () => {
       try {
-        const trackingToken = localStorage.getItem(`tracking-token:${orderId}`) ?? "";
+        const trackingToken = localStorage.getItem(`tracking-token:${orderId}`) ?? tokenFromUrl;
         const response = await fetch(`/api/orders/${orderId}`, {
           headers: {
             "x-tracking-code": orderId,
@@ -106,7 +111,7 @@ function OrderTrackingPage() {
     }, 5000);
 
     return () => window.clearInterval(timer);
-  }, [orderId]);
+  }, [orderId, tokenFromUrl]);
 
   useEffect(() => {
     if (!order?.id) return;

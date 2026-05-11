@@ -36,7 +36,8 @@ export function CartSummarySection() {
   const handleShareTracking = async () => {
     const code = lastTrackingCode ?? lastOrderId;
     if (!code) return;
-    const trackingUrl = `${window.location.origin}/pedido/${code}`;
+    const token = localStorage.getItem(`tracking-token:${code}`) ?? "";
+    const trackingUrl = `${window.location.origin}/pedido/${code}${token ? `?t=${encodeURIComponent(token)}` : ""}`;
     try {
       await navigator.clipboard.writeText(trackingUrl);
       setFeedback("Link de rastreio copiado! Envie ao cliente no WhatsApp.");
@@ -151,7 +152,14 @@ export function CartSummarySection() {
               <p>{feedback ?? `Último pedido: #${lastOrderId?.slice(0, 8)}`}</p>
               {(lastTrackingCode || lastOrderId) && (
                 <div className="flex flex-wrap items-center gap-3">
-                  <a href={`/pedido/${lastTrackingCode ?? lastOrderId}`} className="story-link text-primary">
+                  <a
+                    href={`/pedido/${lastTrackingCode ?? lastOrderId}${(() => {
+                      const code = lastTrackingCode ?? lastOrderId;
+                      const token = code ? localStorage.getItem(`tracking-token:${code}`) : null;
+                      return token ? `?t=${encodeURIComponent(token)}` : "";
+                    })()}`}
+                    className="story-link text-primary"
+                  >
                     Abrir link de rastreio premium
                   </a>
                   <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">

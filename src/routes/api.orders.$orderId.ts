@@ -106,7 +106,7 @@ export const Route = createFileRoute("/api/orders/$orderId")({
           .maybeSingle();
 
         if (!order) return Response.json({ error: "Pedido não encontrado" }, { status: 404 });
-        if (!isAdmin && order.user_id && order.user_id !== userId) return Response.json({ error: "Sem permissão" }, { status: 403 });
+        if (!isAdmin && order.user_id !== userId) return Response.json({ error: "Sem permissão" }, { status: 403 });
 
         const { data: items } = await supabase
           .from("order_items")

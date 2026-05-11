@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { Database } from "@/integrations/supabase/types";
 import { createClient } from "@supabase/supabase-js";
-import { createHash } from "crypto";
 
 function getPublicServerClient() {
   const url = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
@@ -70,10 +69,9 @@ export const Route = createFileRoute("/api/orders/$orderId")({
             return Response.json({ error: "Link de rastreio inválido ou expirado." }, { status: 401 });
           }
 
-          const tokenHash = createHash("sha256").update(trackingToken).digest("hex");
           const { data: trackedRows, error: trackingError } = await getPublicServerClient().rpc("get_public_order_tracking_secure", {
             _tracking_code: lookup,
-            _tracking_token: tokenHash,
+            _tracking_token: trackingToken,
           });
 
           if (trackingError) {

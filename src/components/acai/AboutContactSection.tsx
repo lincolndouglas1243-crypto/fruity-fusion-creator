@@ -20,7 +20,7 @@ export function AboutContactSection() {
           <div className="mt-4 overflow-hidden rounded-2xl border border-border">
             <iframe
               title="Mapa da loja de açaí"
-              src="https://www.openstreetmap.org/export/embed.html?bbox=-46.66%2C-23.58%2C-46.62%2C-23.54&layer=mapnik"
+              src="https://www.openstreetmap.org/export/embed.html?bbox=-41.989%2C-18.888%2C-41.929%2C-18.848&layer=mapnik&marker=-18.8685%2C-41.9590"
               className="h-64 w-full"
               loading="lazy"
             />

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 type OrderStatus = "pending" | "accepted" | "preparing" | "on_the_way" | "delivered" | "cancelled";
@@ -59,6 +59,7 @@ function OrderTrackingPage() {
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const lastVersionRef = useRef<string>("");
 
   const step = useMemo(() => {
     if (!order) return 0;
@@ -74,9 +75,12 @@ function OrderTrackingPage() {
         }
         const trackingToken = localStorage.getItem(`tracking-token:${orderId}`) ?? tokenFromUrl;
         const response = await fetch(`/api/orders/${orderId}`, {
+          cache: "no-store",
           headers: {
             "x-tracking-code": orderId,
             "x-tracking-token": trackingToken,
+            "cache-control": "no-cache",
+            pragma: "no-cache",
           },
         });
         const body = await response.json().catch(() => ({}));
@@ -92,23 +96,41 @@ function OrderTrackingPage() {
   }, [orderId]);
 
   useEffect(() => {
+    const applyLatestPayload = (body: { order?: OrderDetails; items?: OrderItem[] }) => {
+      if (!body.order) return;
+      const version = [
+        body.order.status,
+        body.order.courier_lat ?? "",
+        body.order.courier_lng ?? "",
+        body.order.courier_heading ?? "",
+        body.order.courier_updated_at ?? "",
+      ].join("|");
+
+      if (version === lastVersionRef.current) return;
+      lastVersionRef.current = version;
+      setOrder(body.order);
+      setItems((body.items as OrderItem[]) ?? []);
+    };
+
     const timer = window.setInterval(async () => {
       try {
         const trackingToken = localStorage.getItem(`tracking-token:${orderId}`) ?? tokenFromUrl;
         const response = await fetch(`/api/orders/${orderId}`, {
+          cache: "no-store",
           headers: {
             "x-tracking-code": orderId,
             "x-tracking-token": trackingToken,
+            "cache-control": "no-cache",
+            pragma: "no-cache",
           },
         });
         if (!response.ok) return;
         const body = await response.json();
-        setOrder(body.order as OrderDetails);
-        setItems((body.items as OrderItem[]) ?? []);
+        applyLatestPayload(body as { order?: OrderDetails; items?: OrderItem[] });
       } catch {
         // mantém última versão em tela
       }
-    }, 5000);
+    }, 2500);
 
     return () => window.clearInterval(timer);
   }, [orderId, tokenFromUrl]);

@@ -44,6 +44,24 @@ function mapUrl(lat: number, lng: number) {
   return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
 }
 
+function extractTrackingData(raw: string) {
+  const value = raw.trim();
+  if (!value) return { code: "", token: "" };
+
+  if (value.includes("/pedido/") && value.includes("http")) {
+    try {
+      const parsed = new URL(value);
+      const codeFromPath = parsed.pathname.split("/").filter(Boolean).pop() ?? "";
+      const tokenFromQuery = parsed.searchParams.get("t") ?? "";
+      return { code: codeFromPath.trim(), token: tokenFromQuery.trim() };
+    } catch {
+      return { code: value, token: "" };
+    }
+  }
+
+  return { code: value, token: "" };
+}
+
 export function OrderTrackingSection() {
   const { lastOrderId, lastTrackingCode } = useCart();
   const [orderId, setOrderId] = useState("");
@@ -63,7 +81,13 @@ export function OrderTrackingSection() {
     setLoading(true);
     setError(null);
     try {
-      const trackingLookup = id.trim();
+      const { code: trackingLookup, token: tokenFromInput } = extractTrackingData(id);
+      if (!trackingLookup) throw new Error("Informe um código de rastreio válido.");
+
+      if (typeof window !== "undefined" && tokenFromInput) {
+        localStorage.setItem(`tracking-token:${trackingLookup}`, tokenFromInput);
+      }
+
       const trackingToken = typeof window !== "undefined" ? localStorage.getItem(`tracking-token:${trackingLookup}`) ?? "" : "";
       const response = await fetch(`/api/orders/${trackingLookup}?rt=${Date.now()}`, {
         cache: "no-store",
@@ -78,7 +102,7 @@ export function OrderTrackingSection() {
       if (!response.ok) throw new Error(result?.error || "Não foi possível carregar o pedido.");
       setActiveOrder(result.order as OrderDetails);
       setItems((result.items as OrderItem[]) ?? []);
-      setOrderId(id.trim());
+      setOrderId(trackingLookup);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível carregar o pedido.");
     } finally {

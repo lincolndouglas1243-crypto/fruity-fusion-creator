@@ -74,7 +74,7 @@ function OrderTrackingPage() {
           localStorage.setItem(`tracking-token:${orderId}`, tokenFromUrl);
         }
         const trackingToken = localStorage.getItem(`tracking-token:${orderId}`) ?? tokenFromUrl;
-        const response = await fetch(`/api/orders/${orderId}`, {
+        const response = await fetch(`/api/orders/${orderId}?rt=${Date.now()}`, {
           cache: "no-store",
           headers: {
             "x-tracking-code": orderId,
@@ -115,7 +115,7 @@ function OrderTrackingPage() {
     const timer = window.setInterval(async () => {
       try {
         const trackingToken = localStorage.getItem(`tracking-token:${orderId}`) ?? tokenFromUrl;
-        const response = await fetch(`/api/orders/${orderId}`, {
+        const response = await fetch(`/api/orders/${orderId}?rt=${Date.now()}`, {
           cache: "no-store",
           headers: {
             "x-tracking-code": orderId,

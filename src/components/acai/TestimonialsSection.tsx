@@ -65,6 +65,8 @@ export function TestimonialsSection() {
     setMessage("Feedback enviado para aprovação.");
   };
 
+  const canSubmit = name.trim().length >= 2 && comment.trim().length >= 3;
+
   return (
     <SectionReveal className="brand-shell mt-20" >
       <div id="avaliacoes" className="glass-card p-7 sm:p-10">
@@ -86,15 +88,30 @@ export function TestimonialsSection() {
           </AnimatePresence>
         </div>
 
-        <div className="mx-auto mt-6 grid max-w-3xl gap-2 rounded-2xl border border-border bg-card p-4">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
-          <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Seu feedback" className="min-h-20 rounded-xl border border-border bg-background px-3 py-2 text-sm" />
-          <select value={rating} onChange={(e) => setRating(Number(e.target.value))} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.45 }}
+          className="mx-auto mt-6 grid max-w-3xl gap-3 rounded-2xl border border-border bg-card p-4 sm:p-5"
+        >
+          <h3 className="text-base font-bold text-foreground sm:text-lg">Enviar feedback</h3>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground transition focus:border-primary/60 focus:outline-none" />
+          <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Seu feedback" className="min-h-24 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground transition focus:border-primary/60 focus:outline-none" />
+          <select value={rating} onChange={(e) => setRating(Number(e.target.value))} className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground transition focus:border-primary/60 focus:outline-none">
             {[5, 4, 3, 2, 1].map((value) => <option key={value} value={value}>{value} estrelas</option>)}
           </select>
-          <button onClick={submitFeedback} className="btn-soft">Enviar feedback</button>
-          {message && <p className="text-xs text-muted-foreground">{message}</p>}
-        </div>
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.01 }}
+            onClick={submitFeedback}
+            disabled={!canSubmit}
+            className="btn-soft disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Enviar feedback
+          </motion.button>
+          {message && <p className="text-xs font-medium text-foreground">{message}</p>}
+        </motion.div>
       </div>
     </SectionReveal>
   );

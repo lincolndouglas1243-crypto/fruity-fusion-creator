@@ -37,18 +37,18 @@ export function Navbar() {
       transition={{ duration: 0.5 }}
       className="fixed inset-x-0 top-0 z-50"
     >
-      <div className="brand-shell pt-4">
+      <div className="brand-shell pt-3 sm:pt-4">
         <nav
-          className={`rounded-2xl border px-5 py-3 transition-all duration-300 ${
+          className={`rounded-2xl border px-3 py-2.5 transition-all duration-300 sm:px-5 sm:py-3 ${
             scrolled
               ? "border-border/80 bg-background/80 shadow-[var(--shadow-soft)] backdrop-blur-xl"
               : "border-border/50 bg-background/60 backdrop-blur-md"
           }`}
         >
           <div className="flex items-center justify-between gap-4">
-            <a href="#topo" className="flex items-center gap-2 text-lg font-extrabold text-foreground">
-              <img src={acaiLogo} alt="Logo Açaí dos Amigos" className="h-10 w-10 rounded-md object-cover" />
-              Açaí dos Amigos
+            <a href="#topo" className="flex items-center gap-2 text-base font-extrabold text-foreground sm:text-lg">
+              <img src={acaiLogo} alt="Logo Açaí dos Amigos" className="h-9 w-9 rounded-md object-cover sm:h-10 sm:w-10" />
+              <span className="max-w-[160px] truncate sm:max-w-none">Açaí dos Amigos</span>
             </a>
 
             <div className="hidden items-center gap-5 md:flex">

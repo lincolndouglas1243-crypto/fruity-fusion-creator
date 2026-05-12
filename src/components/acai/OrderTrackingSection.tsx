@@ -169,7 +169,7 @@ export function OrderTrackingSection() {
           <input
             value={orderId}
             onChange={(event) => setOrderId(event.target.value)}
-            placeholder="Digite o ID ou código de rastreio"
+            placeholder="Cole o link de rastreio completo ou código"
             className="min-w-[260px] flex-1 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
           />
           <button onClick={() => loadOrder(orderId)} disabled={loading} className="btn-hero">

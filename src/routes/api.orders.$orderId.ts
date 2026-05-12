@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { Database } from "@/integrations/supabase/types";
 import { createClient } from "@supabase/supabase-js";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 function getServiceServerClient() {
   const url = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;

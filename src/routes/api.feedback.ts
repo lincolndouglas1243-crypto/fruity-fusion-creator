@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const feedbackSchema = z.object({
   customerName: z.string().trim().min(2).max(80),
-  comment: z.string().trim().min(5).max(400),
+  comment: z.string().trim().min(3).max(400),
   rating: z.number().int().min(1).max(5),
 });
 
@@ -26,7 +26,17 @@ export const Route = createFileRoute("/api/feedback")({
         const body = await request.json().catch(() => null);
         const parsed = feedbackSchema.safeParse(body);
         if (!parsed.success) {
-          return Response.json({ error: "Dados de feedback inválidos." }, { status: 400 });
+          const issue = parsed.error.issues[0];
+          const humanMessage =
+            issue?.path?.[0] === "customerName"
+              ? "Informe seu nome com pelo menos 2 caracteres."
+              : issue?.path?.[0] === "comment"
+                ? "Seu feedback precisa ter pelo menos 3 caracteres."
+                : issue?.path?.[0] === "rating"
+                  ? "Escolha uma nota de 1 a 5 estrelas."
+                  : "Dados de feedback inválidos.";
+
+          return Response.json({ error: humanMessage }, { status: 400 });
         }
 
         const { error } = await supabaseAdmin.from("feedback_entries").insert({

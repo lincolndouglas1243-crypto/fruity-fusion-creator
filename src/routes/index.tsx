@@ -12,6 +12,7 @@ import { OrderTrackingSection } from "@/components/acai/OrderTrackingSection";
 import { PromotionsSection } from "@/components/acai/PromotionsSection";
 import { StatsStrip } from "@/components/acai/StatsStrip";
 import { TestimonialsSection } from "@/components/acai/TestimonialsSection";
+import { WhatsappFloatButton } from "@/components/acai/WhatsappFloatButton";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -51,6 +52,7 @@ function Index() {
         <AboutContactSection />
         <FinalCtaSection />
         <FooterSection />
+        <WhatsappFloatButton />
       </div>
     </CartProvider>
   );

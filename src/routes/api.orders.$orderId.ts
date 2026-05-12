@@ -1,7 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { Database } from "@/integrations/supabase/types";
 import { createClient } from "@supabase/supabase-js";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { createHash } from "crypto";
+
+function getServiceServerClient() {
+  const url = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("Server configuration error: service client is not configured");
+  return createClient<Database>(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 function getPublicServerClient() {
   const url = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
@@ -84,17 +93,27 @@ export const Route = createFileRoute("/api/orders/$orderId")({
             );
           }
 
-          const { data: trackedRows, error: trackingError } = await supabaseAdmin.rpc("get_public_order_tracking_secure", {
-            _tracking_code: lookup,
-            _tracking_token: trackingToken,
-          });
+          const serviceClient = getServiceServerClient();
+          const trackingTokenHash = createHash("sha256").update(trackingToken).digest("hex");
+
+          const { data: trackedOrder, error: trackingError } = await serviceClient
+            .from("orders")
+            .select("id, tracking_code, status, total, created_at, courier_lat, courier_lng, courier_heading, courier_updated_at, estimated_minutes")
+            .eq("tracking_code", lookup)
+            .eq("tracking_token_hash", trackingTokenHash)
+            .maybeSingle();
 
           if (trackingError) {
             return jsonNoStore({ error: "Não foi possível carregar rastreio" }, { status: 400 });
           }
 
-          const trackedOrder = trackedRows?.[0];
           if (!trackedOrder) return jsonNoStore({ error: "Pedido não encontrado" }, { status: 404 });
+
+          const { data: trackedItems } = await serviceClient
+            .from("order_items")
+            .select("id, product_name, quantity, selected_size, selected_toppings, line_total")
+            .eq("order_id", trackedOrder.id)
+            .order("created_at", { ascending: true });
 
           return jsonNoStore({
             order: {
@@ -109,7 +128,7 @@ export const Route = createFileRoute("/api/orders/$orderId")({
               courier_updated_at: trackedOrder.courier_updated_at,
               estimated_minutes: trackedOrder.estimated_minutes,
             },
-            items: Array.isArray(trackedOrder.items) ? trackedOrder.items : [],
+            items: trackedItems ?? [],
           });
         }
 

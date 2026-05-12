@@ -43,26 +43,31 @@ function CourierSharePage() {
 
     watchRef.current = navigator.geolocation.watchPosition(
       async (position) => {
-        const lat = Number(position.coords.latitude.toFixed(6));
-        const lng = Number(position.coords.longitude.toFixed(6));
-        const heading = position.coords.heading !== null ? Number(position.coords.heading.toFixed(2)) : null;
+        try {
+          const lat = Number(position.coords.latitude.toFixed(6));
+          const lng = Number(position.coords.longitude.toFixed(6));
+          const heading = position.coords.heading !== null ? Number(position.coords.heading.toFixed(2)) : null;
 
-        const response = await fetch(`/api/courier/${shortCode}/location`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ lat, lng, heading }),
-        });
+          const response = await fetch(`/api/courier/${shortCode}/location`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lat, lng, heading }),
+          });
 
-        if (!response.ok) {
-          const result = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            const result = await response.json().catch(() => ({}));
+            setStatus("error");
+            setMessage(result?.error ?? "Falha ao enviar localização.");
+            return;
+          }
+
+          setStatus("sharing");
+          setMessage("Localização compartilhada com sucesso em tempo real.");
+          setLastSentAt(new Date().toLocaleTimeString("pt-BR"));
+        } catch {
           setStatus("error");
-          setMessage(result?.error ?? "Falha ao enviar localização.");
-          return;
+          setMessage("Não foi possível enviar localização agora. Verifique sua internet e tente novamente.");
         }
-
-        setStatus("sharing");
-        setMessage("Localização compartilhada com sucesso em tempo real.");
-        setLastSentAt(new Date().toLocaleTimeString("pt-BR"));
       },
       () => {
         setStatus("error");

@@ -11,7 +11,7 @@ export function AboutContactSection() {
           </p>
           <div className="mt-6 rounded-2xl border border-border bg-card p-4">
             <p className="text-sm font-semibold text-foreground">Entrega rápida • Área de atendimento:</p>
-            <p className="mt-1 text-sm text-muted-foreground">Centro, Zona Norte e Zona Sul • 11h às 23h</p>
+            <p className="mt-1 text-sm text-muted-foreground">Bairro Democrata e região • 11h às 23h</p>
           </div>
         </article>
 

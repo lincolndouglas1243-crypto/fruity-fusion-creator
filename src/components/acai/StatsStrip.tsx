@@ -26,7 +26,7 @@ export function StatsStrip() {
     <section className="brand-shell -mt-10 relative z-20">
       <div className="glass-card grid gap-4 p-6 text-center md:grid-cols-3">
         <div>
-          <Counter value={6840} suffix="+" />
+          <p className="text-3xl font-extrabold text-foreground">800+</p>
           <p className="text-sm text-muted-foreground">Pedidos entregues</p>
         </div>
         <div>

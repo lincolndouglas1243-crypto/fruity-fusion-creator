@@ -75,7 +75,13 @@ export const Route = createFileRoute("/api/orders/$orderId")({
 
         if (!token) {
           if (!trackingToken || trackingToken.length < 16) {
-            return Response.json({ error: "Link de rastreio inválido ou expirado." }, { status: 401 });
+            return jsonNoStore(
+              {
+                error:
+                  "Não foi possível carregar o rastreio. Abra o link completo de acompanhamento enviado após o pedido (com token de segurança).",
+              },
+              { status: 401 },
+            );
           }
 
           const { data: trackedRows, error: trackingError } = await supabaseAdmin.rpc("get_public_order_tracking_secure", {

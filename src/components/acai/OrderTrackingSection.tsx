@@ -44,6 +44,24 @@ function mapUrl(lat: number, lng: number) {
   return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
 }
 
+function extractTrackingData(raw: string) {
+  const value = raw.trim();
+  if (!value) return { code: "", token: "" };
+
+  if (value.includes("/pedido/") && value.includes("http")) {
+    try {
+      const parsed = new URL(value);
+      const codeFromPath = parsed.pathname.split("/").filter(Boolean).pop() ?? "";
+      const tokenFromQuery = parsed.searchParams.get("t") ?? "";
+      return { code: codeFromPath.trim(), token: tokenFromQuery.trim() };
+    } catch {
+      return { code: value, token: "" };
+    }
+  }
+
+  return { code: value, token: "" };
+}
+
 export function OrderTrackingSection() {
   const { lastOrderId, lastTrackingCode } = useCart();
   const [orderId, setOrderId] = useState("");
@@ -63,19 +81,28 @@ export function OrderTrackingSection() {
     setLoading(true);
     setError(null);
     try {
-      const trackingLookup = id.trim();
+      const { code: trackingLookup, token: tokenFromInput } = extractTrackingData(id);
+      if (!trackingLookup) throw new Error("Informe um código de rastreio válido.");
+
+      if (typeof window !== "undefined" && tokenFromInput) {
+        localStorage.setItem(`tracking-token:${trackingLookup}`, tokenFromInput);
+      }
+
       const trackingToken = typeof window !== "undefined" ? localStorage.getItem(`tracking-token:${trackingLookup}`) ?? "" : "";
-      const response = await fetch(`/api/orders/${trackingLookup}`, {
+      const response = await fetch(`/api/orders/${trackingLookup}?rt=${Date.now()}`, {
+        cache: "no-store",
         headers: {
           "x-tracking-code": trackingLookup,
           "x-tracking-token": trackingToken,
+          "cache-control": "no-cache",
+          pragma: "no-cache",
         },
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result?.error || "Não foi possível carregar o pedido.");
       setActiveOrder(result.order as OrderDetails);
       setItems((result.items as OrderItem[]) ?? []);
-      setOrderId(id.trim());
+      setOrderId(trackingLookup);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível carregar o pedido.");
     } finally {
@@ -127,7 +154,7 @@ export function OrderTrackingSection() {
 
     const timer = window.setInterval(() => {
       loadOrder(orderId);
-    }, 5000);
+    }, 2500);
 
     return () => window.clearInterval(timer);
   }, [orderId]);
@@ -142,7 +169,7 @@ export function OrderTrackingSection() {
           <input
             value={orderId}
             onChange={(event) => setOrderId(event.target.value)}
-            placeholder="Digite o ID ou código de rastreio"
+            placeholder="Cole o link de rastreio completo ou código"
             className="min-w-[260px] flex-1 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
           />
           <button onClick={() => loadOrder(orderId)} disabled={loading} className="btn-hero">
@@ -202,7 +229,7 @@ export function OrderTrackingSection() {
 
             <div className="rounded-2xl border border-border bg-card p-3">
               {activeOrder.courier_lat !== null && activeOrder.courier_lng !== null ? (
-                <div className="relative h-[220px] overflow-hidden rounded-xl border border-border sm:h-[280px] lg:h-[360px]">
+                <div className="relative h-[180px] overflow-hidden rounded-xl border border-border sm:h-[280px] lg:h-[360px]">
                   <iframe
                     title="Mapa do motoboy"
                     src={mapUrl(activeOrder.courier_lat, activeOrder.courier_lng)}
@@ -214,7 +241,7 @@ export function OrderTrackingSection() {
                   </div>
                 </div>
               ) : (
-                <div className="flex h-[220px] items-center justify-center rounded-xl border border-dashed border-border text-center text-sm text-muted-foreground sm:h-[280px] lg:h-[360px]">
+                <div className="flex h-[180px] items-center justify-center rounded-xl border border-dashed border-border text-center text-sm text-muted-foreground sm:h-[280px] lg:h-[360px]">
                   O motoboy ainda não compartilhou localização ao vivo.
                 </div>
               )}

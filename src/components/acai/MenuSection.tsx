@@ -21,8 +21,8 @@ const items = [
   },
   {
     image: acaiGarrafaFrutas,
-    title: "Garrafa Paçoca • Banana • Morango",
-    description: "Açaí de garrafa 500ml com blend clássico e sabor intenso.",
+    title: "Oferta do Dia • Garrafa 500ml",
+    description: "Paçoca, banana e morango em uma garrafa promocional com sabor intenso.",
     price: 20,
     badge: "Oferta do dia",
   },

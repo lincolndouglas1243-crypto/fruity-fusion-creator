@@ -98,9 +98,26 @@ export function TestimonialsSection() {
           <h3 className="text-base font-bold text-foreground sm:text-lg">Enviar feedback</h3>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground transition focus:border-primary/60 focus:outline-none" />
           <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Seu feedback" className="min-h-24 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground transition focus:border-primary/60 focus:outline-none" />
-          <select value={rating} onChange={(e) => setRating(Number(e.target.value))} className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground transition focus:border-primary/60 focus:outline-none">
-            {[5, 4, 3, 2, 1].map((value) => <option key={value} value={value}>{value} estrelas</option>)}
-          </select>
+          <div className="grid gap-1">
+            <p className="text-xs font-medium text-muted-foreground">Sua nota</p>
+            <div className="flex items-center gap-2">
+              {[1, 2, 3, 4, 5].map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setRating(value)}
+                  className={`rounded-lg border px-2 py-1 text-sm transition ${
+                    rating >= value
+                      ? "border-primary bg-primary/15 text-foreground"
+                      : "border-border bg-background text-muted-foreground"
+                  }`}
+                  aria-label={`${value} estrela${value > 1 ? "s" : ""}`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+          </div>
           <motion.button
             whileTap={{ scale: 0.98 }}
             whileHover={{ scale: 1.01 }}

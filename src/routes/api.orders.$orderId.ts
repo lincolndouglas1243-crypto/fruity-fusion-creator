@@ -32,6 +32,14 @@ function getBearerToken(request: Request) {
   return header.replace("Bearer ", "").trim();
 }
 
+function jsonNoStore(body: unknown, init?: ResponseInit) {
+  const headers = new Headers(init?.headers);
+  headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+  headers.set("Pragma", "no-cache");
+  headers.set("Expires", "0");
+  return Response.json(body, { ...init, headers });
+}
+
 export const Route = createFileRoute("/api/orders/$orderId")({
   server: {
     handlers: {
@@ -45,13 +53,13 @@ export const Route = createFileRoute("/api/orders/$orderId")({
         let isAdmin = false;
 
         if (!token && isUuid) {
-          return Response.json({ error: "Use o código de rastreio para acompanhar como visitante" }, { status: 400 });
+          return jsonNoStore({ error: "Use o código de rastreio para acompanhar como visitante" }, { status: 400 });
         }
 
         if (token) {
           const authedClient = getServerClient(token);
           const { data: userData } = await authedClient.auth.getUser(token);
-          if (!userData.user) return Response.json({ error: "Sessão inválida" }, { status: 401 });
+          if (!userData.user) return jsonNoStore({ error: "Sessão inválida" }, { status: 401 });
 
           userId = userData.user.id;
           const { data: roleData } = await authedClient
@@ -76,13 +84,13 @@ export const Route = createFileRoute("/api/orders/$orderId")({
           });
 
           if (trackingError) {
-            return Response.json({ error: "Não foi possível carregar rastreio" }, { status: 400 });
+            return jsonNoStore({ error: "Não foi possível carregar rastreio" }, { status: 400 });
           }
 
           const trackedOrder = trackedRows?.[0];
-          if (!trackedOrder) return Response.json({ error: "Pedido não encontrado" }, { status: 404 });
+          if (!trackedOrder) return jsonNoStore({ error: "Pedido não encontrado" }, { status: 404 });
 
-          return Response.json({
+          return jsonNoStore({
             order: {
               id: trackedOrder.id,
               tracking_code: trackedOrder.tracking_code,
@@ -105,8 +113,8 @@ export const Route = createFileRoute("/api/orders/$orderId")({
           .eq(isUuid ? "id" : "tracking_code", lookup)
           .maybeSingle();
 
-        if (!order) return Response.json({ error: "Pedido não encontrado" }, { status: 404 });
-        if (!isAdmin && order.user_id !== userId) return Response.json({ error: "Sem permissão" }, { status: 403 });
+        if (!order) return jsonNoStore({ error: "Pedido não encontrado" }, { status: 404 });
+        if (!isAdmin && order.user_id !== userId) return jsonNoStore({ error: "Sem permissão" }, { status: 403 });
 
         const { data: items } = await supabase
           .from("order_items")
@@ -114,7 +122,7 @@ export const Route = createFileRoute("/api/orders/$orderId")({
           .eq("order_id", order.id)
           .order("created_at", { ascending: true });
 
-        return Response.json({
+        return jsonNoStore({
           order: {
             id: order.id,
             tracking_code: order.tracking_code,
